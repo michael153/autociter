@@ -6,15 +6,6 @@ number_of_citations_added = 0
 number_of_links_visited = 0
 number_of_links = 33246
 
-def debug (link, citations):
-	global number_of_citations_added
-	global number_of_links_visited
-	global number_of_links
-	number_of_citations_added = number_of_citations_added + len (citations)
-	number_of_links_visited = number_of_links_visited + 1
-	percent_complete = round (number_of_links_visited / number_of_links * 100, 2)
-	print (str (number_of_citations_added) + "\t" + str (number_of_links_visited) + "\t" + '{0:.2f}'.format (percent_complete) + "%\t" + link)
-
 def write_citations_to_file (citations, filename):
 	with open ("citations.txt", "a", -1, "utf-8") as file:
 		for citation in citations:
