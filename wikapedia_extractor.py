@@ -2,10 +2,6 @@ from html import unescape
 from urllib import request
 import threading
 
-number_of_citations_added = 0
-number_of_links_visited = 0
-number_of_links = 33246
-
 def write_citations_to_file (citations, filename):
 	with open ("citations.txt", "a", -1, "utf-8") as file:
 		for citation in citations:
