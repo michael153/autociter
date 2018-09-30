@@ -3,14 +3,14 @@ from urllib import request
 from os.path import splitext
 import threading, sys, os
 
-num_elements = 0
+num_elements_collected = 0
 num_links_visited = 0
 
 def debug(elements, link):
-    global num_elements, num_links_visited
-    num_elements += len(elements)
+    global num_elements_collected, num_links_visited
+    num_elements_collected += len(elements)
     num_links_visited += 1
-    print(num_elements, '\t', num_links_visited, '\t', link)
+    print(num_elements_collected, '\t', num_links_visited, '\t', link)
 
 def write_elements(elements):
     global_lock.acquire()
@@ -46,6 +46,12 @@ def scrape_websites(links):
         write_elements(elements)
         debug(elements, link)
 
+def execute_threads(threads):
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
 def retrieve_links(filename):
     with open(filename, "r") as file:
         text = file.read()
@@ -66,18 +72,10 @@ def build_threads(num_threads):
         threads.append(thread)
     return threads
 
-def execute_threads(threads):
-    for thread in threads:
-        thread.start()
-    for thread in threads:
-        thread.join()
-
 if __name__ == "__main__":
     assert len(sys.argv) == 5, "Four arguments expected."
     input_filename, output_filename = sys.argv[1], sys.argv[2]
     start_tag, end_tag = sys.argv[3], sys.argv[4]
-    input_path, input_extension = splitext(input_filename)
-    assert input_extension == ".txt", "Text file expected."
     global_lock = threading.Lock()
     threads = build_threads(10)
     execute_threads(threads)
