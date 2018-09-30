@@ -1,88 +1,83 @@
 from html import unescape
 from urllib import request
-import threading
+from os.path import splitext
+import threading, sys, os
 
-number_of_citations_added = 0
-number_of_links_visited = 0
-number_of_links = 33246
+num_elements = 0
+num_links_visited = 0
 
-def debug(link, citations):
-	global number_of_citations_added, number_of_links_visited, number_of_links
-	number_of_citations_added = number_of_citations_added + len(citations)
-	number_of_links_visited = number_of_links_visited + 1
-	percent_complete = round(number_of_links_visited / number_of_links * 100, 2)
-	print (str(number_of_citations_added) + "\t" + str(number_of_links_visited)
-        + "\t" + '{0:.2f}'.format(percent_complete) + "%\t" + link)
+def debug(elements, link):
+    global num_elements, num_links_visited
+    num_elements += len(elements)
+    num_links_visited += 1
+    print(num_elements, '\t', num_links_visited, '\t', link)
 
-def write_citations_to_file(citations):
-	with open("citations.txt", "a", encoding="utf-8") as file:
-		for citation in citations:
-			file.write(citation + "\n")
+def write_elements(elements):
+    global_lock.acquire()
+    with open(output_filename, "a", encoding="utf-8") as file:
+        for element in elements:
+            file.write(element + "\n")
+    global_lock.release()
 
-def extract_elements(source_code, tag):
-	element_count = source_code.count(tag)
-	left_index, right_index = 0, 0
-	elements = []
-	for x in range(element_count):
-		left_index = source_code.find(tag, right_index)
-		right_index = source_code.find("}}", left_index) + len("}}")
-		raw_element = source_code[left_index : right_index]
-		element = raw_element.replace("\n", "")
-		elements.append(element)
-	return elements
-
-def extract_citations(source_code):
-	primary_citations = extract_elements(source_code, "{{cite")
-	secondary_citations = extract_elements(source_code, "{{Cite")
-	citations = primary_citations + secondary_citations
-	return citations
+def extract_elements(text):
+    left, right = 0, 0
+    elements = []
+    while start_tag in text[right:]:
+        left = text.find(start_tag, right)
+        right = text.find(end_tag, left) + len(end_tag)
+        elements.append(text[left:right])
+    return elements
 
 def retrieve_byte_code(link):
-	website = request.urlopen(link)
-	byte_code = website.read()
-	return byte_code
+    website = request.urlopen(link)
+    byte_code = website.read()
+    return byte_code
 
 def retrieve_source_code(link):
-	byte_code = retrieve_byte_code(link)
-	source_code = byte_code.decode("utf-8", "ignore")
-	source_code = unescape(source_code)
-	return source_code
+    byte_code = retrieve_byte_code(link)
+    source_code = byte_code.decode("utf-8", "replace")
+    source_code = unescape(source_code)
+    return source_code
 
-def retrieve_citations(link):
-	source_code = retrieve_source_code(link)
-	citations = extract_citations(source_code)
-	return citations
+def scrape_websites(links):
+    for link in links:
+        source_code = retrieve_source_code(link)
+        elements = extract_elements(source_code)
+        write_elements(elements)
+        debug(elements, link)
 
-def create_citation_list(links):
-	for link in links:
-		citations = retrieve_citations(link)
-		write_citations_to_file(citations)
-		debug(link, citations)
+def retrieve_links(filename):
+    with open(filename, "r") as file:
+        text = file.read()
+        links = text.splitlines()
+    return links
 
-def retrieve_links_from_file(filename):
-	with open(filename, "r") as file:
-		text = file.read()
-		links = text.splitlines()
-	return links
+def assign_links(thread_number, num_threads):
+    links = retrieve_links(input_filename)
+    links_per_thread = len(links) // num_threads
+    start = thread_number * links_per_thread
+    return links[start:start + links_per_thread]
 
-def retrieve_links_for_thread(thread_number, number_of_threads):
-	links = retrieve_links_from_file("links.txt")
-	number_of_links = len(links)
-	links_per_thread = number_of_links // number_of_threads
-	start_index = thread_number * links_per_thread
-	return links[start_index : start_index + links_per_thread]
+def build_threads(num_threads):
+    threads = []
+    for thread_number in range(num_threads):
+        links = assign_links(thread_number, num_threads)
+        thread = threading.Thread(target=scrape_websites, args=(links, ))
+        threads.append(thread)
+    return threads
 
-def build_threads(number_of_threads):
-	threads = []
-	for thread_number in range(number_of_threads):
-		links = retrieve_links_for_thread(thread_number, number_of_threads)
-		thread = threading.Thread(target = create_citation_list, args = (links, ))
-		threads.append(thread)
-	return threads
+def execute_threads(threads):
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 if __name__ == "__main__":
-	threads = build_threads(10)
-	for thread in threads:
-		thread.start()
-	for thread in threads:
-		thread.join()
+    assert len(sys.argv) == 5, "Four arguments expected."
+    input_filename, output_filename = sys.argv[1], sys.argv[2]
+    start_tag, end_tag = sys.argv[3], sys.argv[4]
+    input_path, input_extension = splitext(input_filename)
+    assert input_extension == ".txt", "Text file expected."
+    global_lock = threading.Lock()
+    threads = build_threads(10)
+    execute_threads(threads)
