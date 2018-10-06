@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Define functions which help extract data from webpages."""
+"""Define functions that help with webpage data exctraction."""
 
 from urllib import request
 
@@ -21,13 +21,13 @@ from urllib import request
 def extract_elements(text, start_tag, end_tag):
     """Return elements in a body of text.
 
-    A element is defined as a string (called the content of the element)
-    surrounded by a start tag and end tag.
+    An element is defined as a string (called the content of the element)
+    surrounded by a start tag and end tag (also strings).
 
-    Args:
+    Arguments:
         text: The string to be searched.
-        start_tag: The opening tag of an element (e.g <p>)
-        end_tag: the closing tag of an element (e.g </p>)
+        start_tag: The opening tag of an element (e.g <p>).
+        end_tag: the closing tag of an element (e.g </p>).
 
     Returns:
         A list of elements defined by the given tags.
@@ -46,7 +46,7 @@ def retrieve_source_code(link):
 
     HTML character references (e.g &gt;, &#62;, &#x3e;) are left intact.
 
-    Args:
+    Arguments:
         link: The webpage's URL.
 
     Returns:
@@ -60,34 +60,20 @@ def retrieve_source_code(link):
 def scrape_websites(links, start_tag, end_tag):
     """Scrapes webpages for elements defined by the given tags.
 
-    Args:
+    Arguments:
         links: The URLs of the webpage's to be scraped.
-        start_tag: The opening tag of an element (e.g <p>)
-        end_tag: the closing tag of an element (e.g </p>)
+        start_tag: The opening tag of an element (e.g <p>).
+        end_tag: The closing tag of an element (e.g </p>).
 
     Returns:
         A list of elements defined by the given tags.
     """
     elements = []
+    num_links_visited, num_elements_extracted = 0, 0
     for link in links:
         source_code = retrieve_source_code(link)
+        num_links_visited += 1
         elements = extract_elements(source_code, start_tag, end_tag)
+        num_elements_extracted += len(elements)
+        print(num_links_visited, "\t", num_elements_extracted, "\t", link)
     return elements
-
-
-def retrieve_links(filename):
-    """Return URLs saved in a file.
-
-    The specified file should only contain newline-seperated URLs. The function
-    may malfunction if the file is formatted incorrectly.
-
-    Args:
-        filename: The name of a file containing webpage URLs.
-
-    Returns:
-        A list of website URLs.
-    """
-    with open(filename) as file:
-        text = file.read()
-        links = text.splitlines()
-    return links
