@@ -52,24 +52,39 @@ class Element:
         self.content = html.unescape(self.content.replace("\n", ""))
 
 
-def scrape_websites(links, start_tag, end_tag):
+def scrape_websites(urls, start_tag, end_tag):
     """Scrape webpages for elements defined by the given tags.
 
     If a webpage is unable to be reached, the URL of that webpage is written to
     "log.txt", and no elements are extracted from that webpage.
 
     Arguments:
-        links: The URLs of the webpage's to be scraped.
+        urls: The URLs of the webpage's to be scraped.
         start_tag: The opening tag of an element (e.g <p>).
         end_tag: The closing tag of an element (e.g </p>).
 
     Yields:
         A list of element objects.
     """
-    for link in links:
-        source_code = retrieve_source_code(link)
-        yield extract_elements(source_code, start_tag, end_tag)
+    for url in urls:
+        yield scrape_website(url, start_tag, end_tag)
 
+def scrape_website(url, start_tag, end_tag):
+    """Scrape webpage for elements defined by the given tags.
+
+    If a webpage is unable to be reached, the URL of that webpage is written to
+    "log.txt", and no elements are extracted from the webpage.
+
+    Arguments:
+        urls: The URLs of the webpage's to be scraped.
+        start_tag: The opening tag of an element (e.g <p>).
+        end_tag: The closing tag of an element (e.g </p>).
+
+    Returns:
+        A list of element objects.
+    """
+    source_code = retrieve_source_code(url)
+    return extract_elements(source_code, start_tag, end_tag)
 
 def extract_elements(text, start_tag, end_tag):
     """Return elements found in a body of text.
@@ -85,14 +100,14 @@ def extract_elements(text, start_tag, end_tag):
     left, right = 0, 0
     elements = []
     while start_tag in text[right:]:
-        left = text.find(start_tag, right)
+        left = text.find(start_tag, right) + len(start_tag)
         right = text.find(end_tag, left) + len(end_tag)
-        content = text[left + len(start_tag):right - len(end_tag)]
+        content = text[left:right - len(end_tag)]
         elements += [Element(start_tag, content, end_tag)]
     return elements
 
 
-def retrieve_source_code(link):
+def retrieve_source_code(url):
     """Retrieve a webpage's source code.
 
     HTML character references (e.g &gt;, &#62;, &#x3e;) are left intact. If the
@@ -100,21 +115,21 @@ def retrieve_source_code(link):
     string is returned.
 
     Arguments:
-        link: The webpage's URL.
+        url: The webpage's URL.
 
     Returns:
         A string representing the source code of a webpage.
     """
     try:
-        website = _open_website(link)
+        website = _open_website(url)
         byte_code = _read_website(website)
         return byte_code.decode("utf-8", "replace")
     except RuntimeError:
-        log(link)
+        log(url)
         return ""
 
 
-def _open_website(link, num_attempts=0):
+def _open_website(url, num_attempts=0):
     """Open the given URL and return a context manager object.
 
     The source code of a webpage can be retrieved by reading and then
@@ -122,7 +137,7 @@ def _open_website(link, num_attempts=0):
     open, the function waits one second and then tries again.
 
     Arguments:
-        link: The webpage's URL.
+        url: The webpage's URL.
 
     Returns:
         A context manager object.
@@ -133,10 +148,10 @@ def _open_website(link, num_attempts=0):
     if num_attempts > 10:
         raise RuntimeError("Too many attempts to open website.")
     try:
-        return request.urlopen(link)
+        return request.urlopen(url)
     except (WindowsError, error.URLError, error.HTTPError):
         time.sleep(1)
-        return _open_website(link, num_attempts + 1)
+        return _open_website(url, num_attempts + 1)
 
 
 def _read_website(website, num_attempts=0):
