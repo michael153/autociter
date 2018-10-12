@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Collect data from webpage source code."""
+"""Define functions that collect data from webpages."""
 
 import sys
 import threading
@@ -38,11 +38,11 @@ def main():
         start_tag: The opening tag of an element (e.g <p>).
         end_tag: The closing tag of an element (e.g </p>).
     """
-    assert len(sys.argv) == 5, "Exactly four command-line arguments expected."
+    assert len(sys.argv) == 5, "Exactly five command-line arguments expected."
     input_filename, output_filename = sys.argv[1], sys.argv[2]
     start_tag, end_tag = sys.argv[3], sys.argv[4]
     links = retrieve_links(input_filename)
-    threads = build_threads(10, links, start_tag, end_tag, output_filename)
+    threads = build_threads(8, links, start_tag, end_tag, output_filename)
     execute_threads(threads)
 
 
@@ -59,16 +59,14 @@ def retrieve_links(filename):
         A list of website URLs.
     """
     with open(filename) as file:
-        text = file.read()
-        links = text.splitlines()
-    return links
+        return file.read().splitlines()
 
 
 def build_threads(num_threads, links, start_tag, end_tag, output_filename):
-    """Build threads such that work is evenly devided among multiple processes.
+    """Build threads such that links are evenly devided among processees.
 
-    num_threads should not exceed 10, as more than 10 threads may cause the
-    request module to throw errors.
+    num_threads should not exceed 8, as more than 8 threads will likely cause
+    the request module to throw errors.
 
     Arguments:
         num_threads: The number of threads to be created.
@@ -113,7 +111,7 @@ def execute_threads(threads):
 
 
 def collect_data(links, start_tag, end_tag, output_filename):
-    """Extract HTML elements from websites and save them to a file.
+    """Extract elements from websites and save them to a file.
 
     Arguments:
         links: The URLs of the webpage's to be scraped.
@@ -121,23 +119,23 @@ def collect_data(links, start_tag, end_tag, output_filename):
         end_tag: The closing tag of an element (e.g </p>).
         filename: The name of the file to be written to.
     """
-    data = crawler.scrape_websites(links, start_tag, end_tag)
-    with GLOBAL_LOCK:
-        write(data, output_filename)
+    for elements in crawler.scrape_websites(links, start_tag, end_tag):
+        with GLOBAL_LOCK:
+            write_data(elements, output_filename)
 
 
-def write(data, filename, overwrite=False):
-    """Write elements of iterable object to a file.
+def write_data(data, filename, overwrite=False):
+    """Write elements of an iterable object to a file.
 
     Arguments:
         data: An iterable object.
         filename: The name of the file that will be written to.
-        overwrite: Whether the file should be overwritten.
+        overwrite: Whether the file should be overwritten or not.
     """
     mode = "w" if overwrite else "a"
     with open(filename, mode, encoding="utf-8") as file:
-        for element in data:
-            file.write(element, end="\n")
+        for datum in data:
+            file.write(str(datum) + "\n")
 
 
 if __name__ == "__main__":
