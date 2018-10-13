@@ -15,17 +15,21 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 import threading
 
-from wikipedia import Article, write
+from wikipedia import Article, write, create
 from web import Crawler
 
-INPUT_FILENAME = "featured.txt"
+INPUT_FILE = "assets/featured.txt"
+OUTPUT_FILE = "assets/data.csv"
 GLOBAL_LOCK = threading.Lock()
+NUM_ARTICLES = 100
 
 
 def main():
-    titles = lines(INPUT_FILENAME)
+    titles = lines(INPUT_FILE)
     articles = [Article(title) for title in titles]
-    threads = build(8, aggregate, articles)
+    selected = articles[:NUM_ARTICLES]
+    threads = build(8, aggregate, selected)
+    create(OUTPUT_FILE)
     execute(threads)
 
 
@@ -51,7 +55,6 @@ def allocate(args, thread_number, num_threads):
 
 
 def execute(threads):
-    """Start and then join a list of threads."""
     for thread in threads:
         thread.start()
     for thread in threads:
@@ -60,10 +63,16 @@ def execute(threads):
 
 def aggregate(*articles):
     for article in articles:
-        cache = article.references
+        cached = article.references
         with GLOBAL_LOCK:
-            print(Crawler.num_pages_visited)
-            write(cache)
+            write(cached, OUTPUT_FILE)
+            debug(article)
+
+
+def debug(article):
+    progress = Crawler.num_pages_visited / NUM_ARTICLES
+    percent_complete = str(round(100 * progress, 2)) + "%"
+    print("{0}\t{1}".format(percent_complete, article.url))
 
 
 if __name__ == "__main__":
