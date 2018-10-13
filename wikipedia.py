@@ -25,7 +25,7 @@ def create(filename):
         header = ""
         for parameter in REQUIRED_FIELDS:
             header += parameter + "\t"
-        file.write(header.rstrip())
+        file.write(header.rstrip() + "\n")
 
 
 def write(references, filename):
@@ -67,7 +67,7 @@ class Article:
 class Reference:
 
     def __init__(self, string):
-        for item in ["\n", "[[", "]]"]:
+        for item in ["\n", "[[", "]]", "&nbsp]:
             string = string.replace(item, "")
         string = string.replace("''", "\"")
         self.string = unescape(string)
