@@ -16,7 +16,6 @@
 from web import Crawler
 from html import unescape
 
-
 REQUIRED_FIELDS = "title", "url"
 
 
