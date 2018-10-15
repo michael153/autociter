@@ -16,8 +16,8 @@
 """(As of now) Defines methods to convert web-scraped text into one-hot encodings to be passed into a model."""
 
 import re
-from requests import get
-from pattern.web import plaintext
+import time
+from boilerpipe.extract import Extractor
 
 def cleanToAscii(c):
 	"""Converts a non-ASCII character into it's ASCII equivalent
@@ -97,62 +97,50 @@ def padText(text, textLen=600):
 		return text
 
 def getTextFromUrl(url):
-	"""Preliminary method for retrieving relevant text from a website url
+	"""Preliminary method to extract only the relevant article text from a website using the
+	Python-Boilerpipe API (https://github.com/misja/python-boilerpipe)
 
-		Misc. references:
-			https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
+	The extractor accurately finds a start of the article, but because it omits divs with short text lengths,
+	we must manually get the article (including author) text
+
+	Alternates:
+	https://github.com/goose3/goose3
+
+	Misc. References:
+	https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
 	"""
+	startTime = time.time()
+	cleanedText = Extractor(extractor='CanolaExtractor', url=url).getText()
+	allText = Extractor(extractor='KeepEverythingExtractor', url=url).getText()
 
-	def splitIntoSentences(text):
-		"""Splits a text into a list of sentences based on the English grammar"""
-		caps = "([A-Z])"
-		prefixes = "(Mr|St|Mrs|Ms|Dr)[.]"
-		suffixes = "(Inc|Ltd|Jr|Sr|Co)"
-		starters = "(Mr|Mrs|Ms|Dr|He\s|She\s|It\s|They\s|Their\s|Our\s|We\s|But\s|However\s|That\s|This\s|Wherever)"
-		acronyms = "([A-Z][.][A-Z][.](?:[A-Z][.])?)"
-		websites = "[.](com|net|org|io|gov)"
-		text = " " + text + "  "
-		text = text.replace("\n"," ")
-		text = re.sub(prefixes,"\\1<prd>",text)
-		text = re.sub(websites,"<prd>\\1",text)
-		if "Ph.D" in text: text = text.replace("Ph.D.","Ph<prd>D<prd>")
-		text = re.sub("\s" + caps + "[.] "," \\1<prd> ",text)
-		text = re.sub(acronyms+" "+starters,"\\1<stop> \\2",text)
-		text = re.sub(caps + "[.]" + caps + "[.]" + caps + "[.]","\\1<prd>\\2<prd>\\3<prd>",text)
-		text = re.sub(caps + "[.]" + caps + "[.]","\\1<prd>\\2<prd>",text)
-		text = re.sub(" "+suffixes+"[.] "+starters," \\1<stop> \\2",text)
-		text = re.sub(" "+suffixes+"[.]"," \\1<prd>",text)
-		text = re.sub(" " + caps + "[.]"," \\1<prd>",text)
-		if "”" in text: text = text.replace(".”","”.")
-		if "\"" in text: text = text.replace(".\"","\".")
-		if "!" in text: text = text.replace("!\"","\"!")
-		if "?" in text: text = text.replace("?\"","\"?")
-		text = text.replace(".",".<stop>")
-		text = text.replace("?","?<stop>")
-		text = text.replace("!","!<stop>")
-		text = text.replace("<prd>",".")
-		sentences = text.split("<stop>")
-		sentences = sentences[:-1]
-		sentences = [s.strip() for s in sentences]
-		return sentences
+	# Remove \n and special characters via regex
+	extractedWords = re.sub("[^\w]", " ", cleanedText).split()
+	totalWords = re.sub("[^\w]", " ", allText).split()
 
-	html = get(url).text
-	texts = plaintext(html)
-	sentences = splitIntoSentences(texts)
-	words = ""
-	for sentence in sentences:
-		for word in re.findall(r"[\w']+|[.,!?;]", sentence):
-			words += word + " "
-	return words
+	# Try three (arbitrary amount) of the starting words in extractedWords
+	for i in range(3):
+		if extractedWords[i] in totalWords:
+			totalWords = totalWords[totalWords.index(extractedWords[i]):]
+			break
+
+	for i in range(1, 4):
+		if extractedWords[-i] in totalWords:
+			reverseLookupIndex = len(totalWords) - 1 - totalWords[::-1].index(extractedWords[-i])
+			totalWords = totalWords[:reverseLookupIndex]
+			break
+
+	print("Text scrape finished in {0} seconds".format(time.time() - startTime))
+	return ' '.join(totalWords)
 
 def formatRawText(text, charLen=600):
 	"""Given a string of text, convert into a padded / truncated matrix of one hot vectors"""
-	if len(text) > charLen:
-		text = truncateText(text, charLen)
-	elif len(text) < charLen:
-		text = padText(text, charLen)
-	return oneHot(text)
+	# if len(text) > charLen:
+		# text = truncateText(text, charLen)
+	# elif len(text) < charLen:
+		# text = padText(text, charLen)
+	# return oneHot(text)
+	return text
 
 
-arbitaryUrl = 'https://www.cnn.com/2018/10/12/middleeast/khashoggi-saudi-turkey-recordings-intl/index.html'
-print(formatRawText(getTextFromUrl(arbitaryUrl)))
+# arbitraryUrl = 'https://www.cnn.com/2018/10/12/middleeast/khashoggi-saudi-turkey-recordings-intl/index.html'
+# print(formatRawText(getTextFromUrl(arbitraryUrl)))
