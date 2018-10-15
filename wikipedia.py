@@ -17,13 +17,15 @@ from html import unescape
 
 from web import Crawler
 
-REQUIRED_FIELDS = "title", "first", "last", "publisher", "date", "url"
+PARAMETERS = "title", "first", "last", "first1", "last1", "first2", "last2", "publisher", "date", "url", "archive-url" 
+REQUIRED_FIELDS = "url"
 
 
-def create(filename):
-    with open(filename, "w", encoding="utf-8") as file:
+def create(filename, overwrite=False):
+    mode = "w" if overwrite else "a"
+    with open(filename, mode, encoding="utf-8") as file:
         header = ""
-        for parameter in REQUIRED_FIELDS:
+        for parameter in PARAMETERS:
             header += parameter + "\t"
         file.write(header.rstrip() + "\n")
 
@@ -67,7 +69,7 @@ class Article:
 class Reference:
 
     def __init__(self, string):
-        for item in ["\n", "[[", "]]", "&nbsp]:
+        for item in ["\n", "[[", "]]", "&nbsp"]:
             string = string.replace(item, "")
         string = string.replace("''", "\"")
         self.string = unescape(string)
@@ -98,6 +100,6 @@ class Reference:
 
     def __str__(self):
         string = ""
-        for parameter in REQUIRED_FIELDS:
+        for parameter in PARAMETERS:
             string += self[parameter] + "\t"
         return string.rstrip()
