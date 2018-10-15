@@ -21,6 +21,7 @@ from web import Crawler
 INPUT_FILE = "assets/featured.txt"
 OUTPUT_FILE = "assets/data.txt"
 GLOBAL_LOCK = threading.Lock()
+NUM_ARTICLES = 5839
 
 
 def main():
@@ -34,9 +35,6 @@ def main():
 def lines(filename):
     with open(filename) as file:
         return file.read().splitlines()
-
-
-NUM_ARTICLES = len(lines(INPUT_FILE))
 
 
 def build(num_threads, target, args):
