@@ -67,7 +67,7 @@ class Article:
 class Reference:
 
     def __init__(self, string):
-        for item in ["\n", "[[", "]]", "&nbsp]:
+        for item in ["\n", "[[", "]]", "&nbsp"]:
             string = string.replace(item, "")
         string = string.replace("''", "\"")
         self.string = unescape(string)
