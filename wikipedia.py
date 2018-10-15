@@ -13,14 +13,22 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-from web import Crawler
 from html import unescape
 
+from web import Crawler
 
-REQUIRED_FIELDS = "title", "url"
+REQUIRED_FIELDS = "title", "first", "last", "publisher", "date", "url"
 
 
-def write(references, filename="references.csv"):
+def create(filename):
+    with open(filename, "w", encoding="utf-8") as file:
+        header = ""
+        for parameter in REQUIRED_FIELDS:
+            header += parameter + "\t"
+        file.write(header.rstrip() + "\n")
+
+
+def write(references, filename):
     valid_references = filter(validate, references)
     with open(filename, "a", encoding="utf-8") as file:
         for reference in valid_references:
@@ -28,7 +36,7 @@ def write(references, filename="references.csv"):
 
 
 def validate(reference):
-    if not type(reference) is Reference:
+    if not isinstance(reference, Reference):
         return False
     for parameter in REQUIRED_FIELDS:
         if not parameter in reference:
@@ -51,15 +59,15 @@ class Article:
 
     @property
     def references(self):
-        c = Crawler(self.title, "{{cite", "}}")
-        c.scrape([self.url_edit])
-        return [Reference(string) for string in c.data[self.url_edit]]
+        crawler = Crawler(self.title, "{{cite", "}}")
+        crawler.scrape(self.url_edit)
+        return [Reference(string) for string in crawler.data[self.url_edit]]
 
 
 class Reference:
 
     def __init__(self, string):
-        for item in ["\n", "[[", "]]"]:
+        for item in ["\n", "[[", "]]", "&nbsp]:
             string = string.replace(item, "")
         string = string.replace("''", "\"")
         self.string = unescape(string)
@@ -84,7 +92,7 @@ class Reference:
         return "Reference('{0}')".format(self.string)
 
     def __eq__(self, other):
-        if not type(other) is Reference:
+        if not isinstance(other, Reference):
             return False
         return self.string == other.string
 

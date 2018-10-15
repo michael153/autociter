@@ -38,12 +38,11 @@ class Crawler:
         self.data[url] = Website(url).extract(self.opening, self.closing)
         Crawler.num_pages_visited += 1
 
-    def scrape(self, urls):
-        for url in urls:
-            try:
-                self.search(url)
-            except (error.HTTPError, error.URLError, WindowsError):
-                self.log(url)
+    def scrape(self, url):
+        try:
+            self.search(url)
+        except (error.HTTPError, error.URLError, WindowsError):
+            self.log(url)
 
     def saveto(self, filename=None):
         filename = filename or self.name + ".data"
