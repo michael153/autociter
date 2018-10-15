@@ -19,16 +19,14 @@ from wikipedia import Article, write, create
 from web import Crawler
 
 INPUT_FILE = "assets/featured.txt"
-OUTPUT_FILE = "assets/data.csv"
+OUTPUT_FILE = "assets/data.txt"
 GLOBAL_LOCK = threading.Lock()
-NUM_ARTICLES = 100
 
 
 def main():
     titles = lines(INPUT_FILE)
     articles = [Article(title) for title in titles]
-    selected = articles[:NUM_ARTICLES]
-    threads = build(8, aggregate, selected)
+    threads = build(8, aggregate, articles)
     create(OUTPUT_FILE)
     execute(threads)
 
@@ -36,6 +34,9 @@ def main():
 def lines(filename):
     with open(filename) as file:
         return file.read().splitlines()
+
+
+NUM_ARTICLES = len(lines(INPUT_FILE))
 
 
 def build(num_threads, target, args):
