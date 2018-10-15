@@ -17,7 +17,7 @@ from html import unescape
 
 from web import Crawler
 
-PARAMETERS = "title", "first", "last", "first1", "last1", "first2", "last2", "publisher", "date", "url", "archive-url" 
+PARAMETERS = "title", "first", "last", "first1", "last1", "first2", "last2", "publisher", "date", "url", "archive-url"
 REQUIRED_FIELDS = "url"
 
 
