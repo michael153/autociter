@@ -17,26 +17,54 @@
 
 
 from train import *
+from database import Table
+
+def get_UrlAuthorPairs(file):
+	t = Table(file)
+	urls = []
+	authors = []
+	# Prepare urls and authors
+	for r in t.records:
+		if r["url"] != "" and r["url"] != "null":
+			urls.append(r["url"])
+			a = [(r["first"], r["last"]),
+				 (r["first1"], r["last1"]),
+				 (r["first2"], r["last2"])]	
+			checkValidAuthor = lambda x: x[0].strip() != "" and x[1].strip() != "" and x[0] !=  "null" and x[1] != "null"
+			authors.append([' '.join(i) for i in a if checkValidAuthor(i)])
+	datapoints = list(zip(urls, authors))
+	return datapoints
 
 def test_scrapeAuthorInArticle(url_author_pairs):
-	print("Testing... 'test_scrapeAuthorInArticle'")
+	"""For a list of url, author pairs, find the success rate of scraping the url and
+	finding the authors within the text
+	"""
+	print("Testing... 'test_scrapeAuthorInArticle'\n\n")
 	success = 0
+	total = 0
+	scrapeFailure = 0
 	for u, a in url_author_pairs:
-		t = getTextFromUrl(u)
-		success += all([i in t for i in a])
-	success /= len(urls)
-	return success
+		text = getTextFromUrl(u).lower()
+		if text == "":
+			scrapeFailure += 1
+			continue
+		convertedAuthorlist = [i.lower().replace('.', '').replace('-', ' ') for i in a]
+		value = all([i in text for i in convertedAuthorlist])
+		if value == 0:
+			print("\nFailed case: {0}\n".format((u, a)))
+		success += value
+		total += 1
+	return (success, total, scrapeFailure)
 
+# urls = ['https://www.nytimes.com/2018/09/25/us/politics/deborah-ramirez-brett-kavanaugh-allegations.html',
+		# 'https://www.cnn.com/2018/10/12/middleeast/khashoggi-saudi-turkey-recordings-intl/index.html',
+		# 'https://www.huffingtonpost.com/entry/nbc-news-trump-robert-e-lee_us_5bc3813de4b0bd9ed55b2eda']
 
-urls = ['https://www.nytimes.com/2018/09/25/us/politics/deborah-ramirez-brett-kavanaugh-allegations.html',
-		'https://www.cnn.com/2018/10/12/middleeast/khashoggi-saudi-turkey-recordings-intl/index.html',
-		'https://www.huffingtonpost.com/entry/nbc-news-trump-robert-e-lee_us_5bc3813de4b0bd9ed55b2eda']
+# authors = [['Stephanie Saul', 'Robin Pogrebin', 'Mike McIntire', 'Ben Protess'],
+		   # ['Laura Smith-Spark', 'Nic Robertson'], # Need to omit '-' to work
+		   # ['Hayley Miller']]
 
-authors = [['Stephanie Saul', 'Robin Pogrebin', 'Mike McIntire', 'Ben Protess'],
-		   ['Laura Smith-Spark', 'Nic Robertson'], # Need to omit '-' to work
-		   ['Hayley Miller']]
-
-
-print(test_scrapeAuthorInArticle(zip(urls, authors)))
+t_res = test_scrapeAuthorInArticle(get_UrlAuthorPairs('assets/data.txt')[:100])
+print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(t_res[0], t_res[1], t_res[2], (100.0*t_res[0])/t_res[1]))
 
 

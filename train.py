@@ -4,7 +4,7 @@
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
 #
-#       http://www.apache.org/licenses/LICENSE-2.0
+#	   http://www.apache.org/licenses/LICENSE-2.0
 #
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
@@ -108,38 +108,53 @@ def getTextFromUrl(url):
 
 	Misc. References:
 	https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
+
+	Failed cases:
+	https://www.bbc.com/sport/football/22787925, ['Alasdair Lamont']
 	"""
 	startTime = time.time()
-	cleanedText = Extractor(extractor='CanolaExtractor', url=url).getText()
-	allText = Extractor(extractor='KeepEverythingExtractor', url=url).getText()
+	if ".pdf" in url:
+		try:
+			r = requests.get(url, stream=True)
+			f = io.BytesIO(r.content)
+			reader = PdfFileReader(f)
+			contents = reader.getPage(pageNumber).extractText()
+			extractedWords = re.sub("[^\w]", " ", contents).split()
+			return ' '.join(extractedWords)
+		except:
+			print(">>> Error: Error reading pdf in getTextFromUrl")
+			return ""
+	try:
+		cleanedText = Extractor(extractor='CanolaExtractor', url=url).getText()
+		allText = Extractor(extractor='KeepEverythingExtractor', url=url).getText()
+		# Remove \n and special characters via regex
+		extractedWords = re.sub("[^\w]", " ", cleanedText).split()
+		totalWords = re.sub("[^\w]", " ", allText).split()
+		# Try three (arbitrary amount) of the starting words in extractedWords
+		for i in range(3):
+			if extractedWords[i] in totalWords:
+				totalWords = totalWords[totalWords.index(extractedWords[i]):]
+				break
+		# Try three (arbitrary amount) of the ending words in extractedWords
+		for i in range(1, 4):
+			if extractedWords[-i] in totalWords:
+				reverseLookupIndex = len(totalWords) - 1 - totalWords[::-1].index(extractedWords[-i])
+				totalWords = totalWords[:reverseLookupIndex]
+				break
+		print("Text scrape successfully finished in {0} seconds".format(time.time() - startTime))
+		return ' '.join(totalWords)
+	except:
+		print(">>> Error: Error reading text in getTextFromUrl")
+		return ""
 
-	# Remove \n and special characters via regex
-	extractedWords = re.sub("[^\w]", " ", cleanedText).split()
-	totalWords = re.sub("[^\w]", " ", allText).split()
-
-	# Try three (arbitrary amount) of the starting words in extractedWords
-	for i in range(3):
-		if extractedWords[i] in totalWords:
-			totalWords = totalWords[totalWords.index(extractedWords[i]):]
-			break
-
-	for i in range(1, 4):
-		if extractedWords[-i] in totalWords:
-			reverseLookupIndex = len(totalWords) - 1 - totalWords[::-1].index(extractedWords[-i])
-			totalWords = totalWords[:reverseLookupIndex]
-			break
-
-	print("Text scrape finished in {0} seconds".format(time.time() - startTime))
-	return ' '.join(totalWords)
 
 def formatRawText(text, charLen=600):
 	"""Given a string of text, convert into a padded / truncated matrix of one hot vectors"""
-	# if len(text) > charLen:
-		# text = truncateText(text, charLen)
-	# elif len(text) < charLen:
-		# text = padText(text, charLen)
-	# return oneHot(text)
-	return text
+	if len(text) > charLen:
+		text = truncateText(text, charLen)
+	elif len(text) < charLen:
+		text = padText(text, charLen)
+	return oneHot(text)
 
 
 # arbitraryUrl = 'https://www.cnn.com/2018/10/12/middleeast/khashoggi-saudi-turkey-recordings-intl/index.html'
