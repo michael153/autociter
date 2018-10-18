@@ -16,24 +16,8 @@
 """Test various functions and their practicality / success rate"""
 
 
-from train import *
-from database import Table
-
-def get_UrlAuthorPairs(file):
-	t = Table(file)
-	urls = []
-	authors = []
-	# Prepare urls and authors
-	for r in t.records:
-		if r["url"] != "" and r["url"] != "null":
-			urls.append(r["url"])
-			a = [(r["first"], r["last"]),
-				 (r["first1"], r["last1"]),
-				 (r["first2"], r["last2"])]	
-			checkValidAuthor = lambda x: x[0].strip() != "" and x[1].strip() != "" and x[0] !=  "null" and x[1] != "null"
-			authors.append([' '.join(i) for i in a if checkValidAuthor(i)])
-	datapoints = list(zip(urls, authors))
-	return datapoints
+import train
+import pipeline
 
 def test_scrapeAuthorInArticle(url_author_pairs):
 	"""For a list of url, author pairs, find the success rate of scraping the url and
@@ -44,7 +28,7 @@ def test_scrapeAuthorInArticle(url_author_pairs):
 	total = 0
 	scrapeFailure = 0
 	for u, a in url_author_pairs:
-		text = getTextFromUrl(u).lower()
+		text = pipeline.getTextFromUrl(u).lower()
 		if text == "":
 			scrapeFailure += 1
 			continue
@@ -64,7 +48,7 @@ def test_scrapeAuthorInArticle(url_author_pairs):
 		   # ['Laura Smith-Spark', 'Nic Robertson'], # Need to omit '-' to work
 		   # ['Hayley Miller']]
 
-t_res = test_scrapeAuthorInArticle(get_UrlAuthorPairs('assets/data.txt')[:100])
+t_res = test_scrapeAuthorInArticle(pipeline.getArticleUrlAuthors('assets/data.txt')[:50])
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(t_res[0], t_res[1], t_res[2], (100.0*t_res[0])/t_res[1]))
 
 
