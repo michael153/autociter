@@ -22,7 +22,9 @@ import os.path
 import database
 from boilerpipe.extract import Extractor
 
-def getTextFromUrl(url):
+# Data Aggregation
+
+def get_text_from_url(url):
 	"""Preliminary method to extract only the relevant article text from a website using the
 	Python-Boilerpipe API (https://github.com/misja/python-boilerpipe)
 
@@ -48,7 +50,7 @@ def getTextFromUrl(url):
 			extractedWords = re.sub("[^\w]", " ", contents).split()
 			return ' '.join(extractedWords)
 		except:
-			print(">>> Error: Error reading pdf in getTextFromUrl")
+			print(">>> Error: Error reading pdf in get_text_from_url")
 			return ""
 	try:
 		cleanedText = Extractor(extractor='CanolaExtractor', url=url).getText()
@@ -70,72 +72,105 @@ def getTextFromUrl(url):
 		print("Text scrape successfully finished in {0} seconds".format(time.time() - startTime))
 		return ' '.join(totalWords)
 	except:
-		print(">>> Error: Error reading text in getTextFromUrl")
+		print(">>> Error: Error reading text in get_text_from_url")
 		return ""
 
-def getArticleInfo(file, args):
+def get_wikipedia_article_links_info(file, args):
 	"""Retrieve article information from wikipedia database Tables, and store
 	data into a tupled list
 
-	>>> getArticleInfo('asserts/data.txt', ['url', 'author'])
+	>>> get_wikipedia_article_links_info('asserts/data.txt', ['url', 'author'])
 	"""
 
-	def getAttribute(r, arg):
+	def get_attribute(r, arg):
 		"""Given a row entry in Table r, return the proper value in the table that
 		corresponds to the argument arg
 
-		>>> getAttribute(t[0], "url")
+		>>> get_attribute(t[0], "url")
 		'http://www.iwm.org.uk/memorials/item/memorial/2814'
 		"""
 		if arg in ['title', 'publisher', 'date', 'url', 'archive-url']:
 			return r[arg]
 		elif arg == 'authors':
-			tempList = [(r["first"], r["last"]), (r["first1"], r["last1"]), (r["first2"], r["last2"])]
-			standardizeAuthorName = lambda x: x[0].strip() not in ["", "null"] and x[1].strip() not in ["", "null"]
-			return list(set([' '.join(a) for a in tempList if standardizeAuthorName(a)]))
+			temp_list = [(r["first"], r["last"]), (r["first1"], r["last1"]), (r["first2"], r["last2"])]
+			validate_author = lambda x: x[0].strip() not in ["", "null"] and x[1].strip() not in ["", "null"]
+			return list(set([' '.join(a) for a in temp_list if validate_author(a)]))
 
 	t = database.Table(file)
 	data = [[] for i in range(len(args))]
 	# Prepare urls and authors
 	for r in t.records:
-		assureValidity = lambda x: getAttribute(x, 'url') not in ["", [], "null"] #Make sure that url is valid for each table entry
-		# assureValidity = lambda x: all([getAttribute(x, arg) not in ["", [], "null"] for arg in args]) #Make sure that all datapoints are valid for each table entry
-		if assureValidity(r):
+		validate = lambda x: get_attribute(x, 'url') not in ["", [], "null"] #Make sure that url is valid for each table entry
+		# validate = lambda x: all([get_attribute(x, arg) not in ["", [], "null"] for arg in args]) #Make sure that all datapoints are valid for each table entry
+		if validate(r):
 			for i in range(len(args)):
 				arg = args[i]
-				data[i].append(getAttribute(r, arg))
+				data[i].append(get_attribute(r, arg))
 	datapoints = list(zip(*data))
 	# Return labels in order to remember what each index in a datapoint represents
 	labels = {args[x]: x for x in range(len(args))}
 	return (datapoints, labels)
 
-def saveData(fileName, data):
+def aggregate_data(info, num_points=False):
+	"""Collect info and manipulate into the proper format to be saved
+	as data
+
+	Arguments:
+		info, a tuple containing data points, and a label lookup dict
+		num_points, the number of datapoints in info to be used
+	"""
+	datapoints, label_lookup = info[0], info[1]
+	data = []
+	if num_points:
+		datapoints = datapoints[:num_points]
+	for entry in datapoints:
+		url = entry[label_lookup['url']]
+		authors = entry[1]
+		citation_info = {x: entry[label_lookup[x]] for x in label_lookup.keys()}
+		text = get_text_from_url(url)
+		if text != "":
+			v = vectorize_text(text)
+			if v != "":
+				d = {'url': url, 'citation_info': {}, 'article_one_hot': str(v)}
+				for k in citation_info.keys():
+					d['citation_info'][k] = citation_info[k]
+				data.append(d)
+	return data
+
+def save_data(fileName, data):
 	"""Given a fileName and data, a list of tuples containing url link, list of citation info,
 	create an entry in the dict in savedArticleData.dat
+
+	Arguments:
+		fileName, a string file name
+		data, a list of dicts, each dict contains the citation information, url, and text
+			  vectorization of an article
 	"""
 	if not os.path.isfile(fileName):
 		f = open(fileName, "w+")
 		f.write('{}')
 		f.close()
 	try:
-		savedDict = json.load(open(fileName))
+		saved_dict = json.load(open(fileName))
 	except:
-		savedDict = {}
+		saved_dict = {}
 	for datapoint in data:
-		savedDict[datapoint['url']] = {}
+		saved_dict[datapoint['url']] = {}
 		for keys, val in datapoint['citation_info'].items():
-			savedDict[datapoint['url']][keys] = val
-		savedDict[datapoint['url']]['article_oneHot'] = datapoint['article_oneHot']
+			saved_dict[datapoint['url']][keys] = val
+		saved_dict[datapoint['url']]['article_one_hot'] = datapoint['article_one_hot']
 	with open(fileName, 'w') as out:
-		json.dump(savedDict, out, sort_keys=True, indent=4)
+		json.dump(saved_dict, out, sort_keys=True, indent=4)
 
-def cleanToAscii(c):
+# String Vectorization
+
+def clean_to_ascii(c):
 	"""Converts a non-ASCII character into it's ASCII equivalent
 
-		>>> cleanToAscii('ç')
+		>>> clean_to_ascii('ç')
 		'c'
 	"""
-	specialCharacters = {
+	special_chars = {
 		'a': ['à', 'á', 'â', 'ä', 'æ', 'ã', 'å', 'ā'],
 		'c': ['ç', 'ć', 'č'],
 		'e': ['è', 'é', 'ê', 'ë', 'ē', 'ė', 'ę'],
@@ -148,15 +183,15 @@ def cleanToAscii(c):
 		'y': ['ÿ'],
 		'z': ['ž', 'ź', 'ż']
 	}
-	if c in sum(specialCharacters.values(), []):
-		for k in specialCharacters.keys():
-			if c in specialCharacters[k]:
+	if c in sum(special_chars.values(), []):
+		for k in special_chars.keys():
+			if c in special_chars[k]:
 				return k
 	else:
 		print("Can't convert: " + str(c))
 		return ' '
 
-def oneHot(s):
+def one_hot(s):
 	"""Converts a string s into a one-hot encoded vector with default dimensions of 600 by 65.
 	   The column vector will correspond to ['A', 'B', ... 'Z', 'a', 'b', ... 'z', 0, 1, ... 9, '-', ':', '.']
 
@@ -164,12 +199,12 @@ def oneHot(s):
 	   		s: A string s that represents the first and last characters of an article / text
 	   		   with dimensions (600, 1)
 	"""
-	encodingRange = 65
-	mat = [[0 for _ in range(encodingRange)] for __ in range(len(s))]
+	encoding_range = 65
+	mat = [[0 for _ in range(encoding_range)] for __ in range(len(s))]
 	for i in range(len(s)):
 		char = s[i]
 		if not (ord(char) < 127 and ord(char) > 31):
-			char = cleanToAscii(char)
+			char = clean_to_ascii(char)
 		if char.isupper():
 			mat[i][ord(char) - 65] = 1
 		elif char.islower():
@@ -177,63 +212,49 @@ def oneHot(s):
 		elif char.isnumeric():
 			mat[i][52 + ord(char) - 48] = 1
 		elif char == '-':
-			mat[i][encodingRange-3] = 1
+			mat[i][encoding_range-3] = 1
 		elif char == ':':
-			mat[i][encodingRange-2] = 1
+			mat[i][encoding_range-2] = 1
 		elif char == '.':
-			mat[i][encodingRange-1] = 1
+			mat[i][encoding_range-1] = 1
 	return mat
 
-def vectorizeText(text, charLen=600):
+def vectorize_text(text, char_len=600):
 	"""Given a string of text, convert into a padded / truncated matrix of one hot vectors"""
 
-	def truncateText(text, textLen=600):
-		"""Truncates a text so that the return value has a length of textLen by taking the first
+	def truncate_text(text, text_len=600):
+		"""Truncates a text so that the return value has a length of text_len by taking the first
 		and last characters
 		"""
-		if len(text) > textLen:
-			odd = (textLen % 2)
-			return text[0:textLen//2] + text[-(textLen + odd)//2:]
+		if len(text) > text_len:
+			odd = (text_len % 2)
+			return text[0:text_len//2] + text[-(text_len + odd)//2:]
 		else:
 			return text
-	def padText(text, textLen=600):
+	def pad_text(text, text_len=600):
 		"""Pads a text with space characters in the middle to preserve the beginning and ending
-		while also so that the length of the text is equal to textLen
+		while also so that the length of the text is equal to text_len
 		"""
-		if len(text) < textLen:
-			curLen = len(text)
-			remainder = textLen - curLen
-			return text[:curLen//2] + (' ')*remainder + textLen[curLen//2:]
+		if len(text) < text_len:
+			cur_len = len(text)
+			remainder = text_len - cur_len
+			return text[:cur_len//2] + (' ')*remainder + text_len[cur_len//2:]
 		else:
 			return text
 	
 	try:
-		if len(text) > charLen:
-			text = truncateText(text, charLen)
-		elif len(text) < charLen:
-			text = padText(text, charLen)
-		return oneHot(text)
+		if len(text) > char_len:
+			text = truncate_text(text, char_len)
+		elif len(text) < char_len:
+			text = pad_text(text, char_len)
+		return one_hot(text)
 	except:
 		print("\n>>> Error: Vectorizing Text\n\n" + str(text) + "\n")
 		return ""
 
-info = getArticleInfo('assets/data.txt', ['url', 'authors'])
-datapoints, labelLookup = info[0], info[1]
 
-data = []
-for entry in datapoints[:25]:
-	url = entry[labelLookup['url']]
-	authors = entry[1]
-	citation_info = {x: entry[labelLookup[x]] for x in labelLookup.keys()}
-	text = getTextFromUrl(url)
-	if text != "":
-		v = vectorizeText(text)
-		if v != "":
-			d = {'url': url, 'citation_info': {}, 'article_oneHot': str(v)}
-			for k in citation_info.keys():
-				d['citation_info'][k] = citation_info[k]
-			data.append(d)
-
-saveData('assets/savedArticleData.dat', data)
+# info = get_wikipedia_article_links_info('assets/data.txt', ['url', 'authors'])
+# data = aggregate_data(info, 25)
+# save_data('assets/savedArticleData.dat', data)
 
 
