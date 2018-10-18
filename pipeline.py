@@ -73,22 +73,6 @@ def getTextFromUrl(url):
 		print(">>> Error: Error reading text in getTextFromUrl")
 		return ""
 
-# def getArticleUrlAuthors(file):
-# 	t = database.Table(file)
-# 	urls = []
-# 	authors = []
-# 	# Prepare urls and authors
-# 	for r in t.records:
-# 		if r["url"] != "" and r["url"] != "null":
-# 			urls.append(r["url"])
-# 			a = [(r["first"], r["last"]),
-# 				 (r["first1"], r["last1"]),
-# 				 (r["first2"], r["last2"])]	
-# 			checkValidAuthor = lambda x: x[0].strip() != "" and x[1].strip() != "" and x[0] !=  "null" and x[1] != "null"
-# 			authors.append([' '.join(i) for i in a if checkValidAuthor(i)])
-# 	datapoints = list(zip(urls, authors))
-# 	return datapoints
-
 def getArticleInfo(file, args):
 	"""Retrieve article information from wikipedia database Tables, and store
 	data into a tupled list
@@ -108,7 +92,7 @@ def getArticleInfo(file, args):
 		elif arg == 'authors':
 			tempList = [(r["first"], r["last"]), (r["first1"], r["last1"]), (r["first2"], r["last2"])]
 			standardizeAuthorName = lambda x: x[0].strip() not in ["", "null"] and x[1].strip() not in ["", "null"]
-			return [' '.join(i) for a in tempList if checkValidAuthor(a)]
+			return list(set([' '.join(a) for a in tempList if standardizeAuthorName(a)]))
 
 	t = database.Table(file)
 	data = [[] for i in range(len(args))]
@@ -133,17 +117,17 @@ def saveData(fileName, data):
 		f = open(fileName, "w+")
 		f.write('{}')
 		f.close()
-	savedDict = json.load(open(fileName))
+	try:
+		savedDict = json.load(open(fileName))
+	except:
+		savedDict = {}
 	for datapoint in data:
-		if datapoint['url'] not in savedDict:
-			savedDict[datapoint['url']] = {}
-			for keys, val in datapoint['citation_info'].items():
-				savedDict[datapoint['url']][keys] = val
-			savedDict[datapoint['url']]['article_oneHot'] = datapoint['article_oneHot']
-		else:
-			print(">>> Warning: Datapoint already found in article (url = {0})".format(datapoint['url']))
+		savedDict[datapoint['url']] = {}
+		for keys, val in datapoint['citation_info'].items():
+			savedDict[datapoint['url']][keys] = val
+		savedDict[datapoint['url']]['article_oneHot'] = datapoint['article_oneHot']
 	with open(fileName, 'w') as out:
-		json.dump(savedDict, out)
+		json.dump(savedDict, out, sort_keys=True, indent=4)
 
 def cleanToAscii(c):
 	"""Converts a non-ASCII character into it's ASCII equivalent
@@ -233,12 +217,11 @@ def vectorizeText(text, charLen=600):
 		print("\n>>> Error: Vectorizing Text\n\n" + str(text) + "\n")
 		return ""
 
-# urlAuthorPairs = getArticleUrlAuthors('assets/data.txt')[:25]
-
-info = getArticleInfo('assets/data.txt', ['url', 'author'])
+info = getArticleInfo('assets/data.txt', ['url', 'authors'])
 datapoints, labelLookup = info[0], info[1]
+
 data = []
-for entry in datapoints[:10]:
+for entry in datapoints[:25]:
 	url = entry[labelLookup['url']]
 	authors = entry[1]
 	citation_info = {x: entry[labelLookup[x]] for x in labelLookup.keys()}
