@@ -19,36 +19,47 @@
 import train
 import pipeline
 
-def test_scrapeAuthorInArticle(url_author_pairs):
+def test_scrape_author_in_article(info, num_points=False):
 	"""For a list of url, author pairs, find the success rate of scraping the url and
 	finding the authors within the text
 	"""
-	print("Testing... 'test_scrapeAuthorInArticle'\n\n")
-	success = 0
-	total = 0
-	scrapeFailure = 0
-	for u, a in url_author_pairs:
-		text = pipeline.getTextFromUrl(u).lower()
+
+	def standardize_author_name(author):
+		"""Standardize author name formatting so that author name can be properly
+		located
+		"""
+		return author.lower().replace('.', '').replace('-', ' ')
+
+	if num_points:
+		print("Testing {0} datapoints... 'test_scrape_author_in_article'\n\n".format(num_points))
+	else:
+		print("Testing datapoints... 'test_scrape_author_in_article'\n\n")
+		
+	label_lookup = info[1]
+	success, total, scrape_failure = 0, 0, 0
+	datapoints = info[0][:num_points] if num_points else info[0]
+
+	for t in datapoints:
+		url = t[label_lookup['url']]
+		authors = t[label_lookup['authors']]
+		text = pipeline.get_text_from_url(url).lower()
 		if text == "":
-			scrapeFailure += 1
+			scrape_failure += 1
 			continue
-		convertedAuthorlist = [i.lower().replace('.', '').replace('-', ' ') for i in a]
-		value = all([i in text for i in convertedAuthorlist])
-		if value == 0:
-			print("\nFailed case: {0}\n".format((u, a)))
-		success += value
+		converted_authors = [standardize_author_name(a) for a in authors]
+		found = all([i in text for i in converted_authors])
+		if not found:
+			print("\nFailed case: {0}\n".format((url, authors)))
+		success += found
 		total += 1
-	return (success, total, scrapeFailure)
+	return (success, total, scrape_failure)
 
-# urls = ['https://www.nytimes.com/2018/09/25/us/politics/deborah-ramirez-brett-kavanaugh-allegations.html',
-		# 'https://www.cnn.com/2018/10/12/middleeast/khashoggi-saudi-turkey-recordings-intl/index.html',
-		# 'https://www.huffingtonpost.com/entry/nbc-news-trump-robert-e-lee_us_5bc3813de4b0bd9ed55b2eda']
+info = pipeline.get_wikipedia_article_links_info('assets/data.txt', ['url', 'authors'])
+result = test_scrape_author_in_article(info, 50)
 
-# authors = [['Stephanie Saul', 'Robin Pogrebin', 'Mike McIntire', 'Ben Protess'],
-		   # ['Laura Smith-Spark', 'Nic Robertson'], # Need to omit '-' to work
-		   # ['Hayley Miller']]
-
-t_res = test_scrapeAuthorInArticle(pipeline.getArticleUrlAuthors('assets/data.txt')[:50])
-print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(t_res[0], t_res[1], t_res[2], (100.0*t_res[0])/t_res[1]))
+print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(result[0],
+																	 result[1],
+																	 result[2],
+																	 (100.0*result[0])/result[1]))
 
 
