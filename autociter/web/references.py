@@ -25,6 +25,7 @@ def clean(string):
     return html.unescape(string)
 
 
+#TODO: Improve this mess
 class ArticleReference:
     """A Wikipedia article reference."""
 
@@ -72,7 +73,7 @@ class ArticleReference:
     def __contains__(self, attribute):
         return self.data[attribute] != ""
 
-    def __str__(self):
+    def __csv__(self):
         """Return csv-compatible representation."""
         string = ""
         for attribute in ArticleReference.ATTRIBUTES:
