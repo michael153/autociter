@@ -15,13 +15,11 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 import threading
 
-from wikipedia import Article, write, create
-from web import Crawler
+from wikibot.web.crawlers import ArticleCrawler
 
 INPUT_FILE = "assets/featured.txt"
 OUTPUT_FILE = "assets/data.txt"
 GLOBAL_LOCK = threading.Lock()
-NUM_ARTICLES = 5839
 
 
 def main():
@@ -61,17 +59,11 @@ def execute(threads):
 
 
 def aggregate(*articles):
+    crawler = ArticleCrawler()
     for article in articles:
-        cached = article.references
+        cached = crawler.scrape(article)
         with GLOBAL_LOCK:
             write(cached, OUTPUT_FILE)
-            debug(article)
-
-
-def debug(article):
-    progress = Crawler.num_pages_visited / NUM_ARTICLES
-    percent_complete = str(round(100 * progress, 2)) + "%"
-    print("{0}\t{1}".format(percent_complete, article.url))
 
 
 if __name__ == "__main__":

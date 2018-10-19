@@ -13,66 +13,22 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-from html import unescape
-
-from web import Crawler
-
-PARAMETERS = "title", "first", "last", "first1", "last1", "first2", "last2", "publisher", "date", "url", "archive-url"
-REQUIRED_FIELDS = "url"
-
-
-def create(filename, overwrite=False):
-    mode = "w" if overwrite else "a"
-    with open(filename, mode, encoding="utf-8") as file:
-        header = ""
-        for parameter in PARAMETERS:
-            header += parameter + "\t"
-        file.write(header.rstrip() + "\n")
-
-
-def write(references, filename):
-    valid_references = filter(validate, references)
-    with open(filename, "a", encoding="utf-8") as file:
-        for reference in valid_references:
-            file.write(str(reference) + "\n")
-
-
-def validate(reference):
-    if not isinstance(reference, Reference):
-        return False
-    for parameter in REQUIRED_FIELDS:
-        if not parameter in reference:
-            return False
-    return True
-
-
-class Article:
-
-    def __init__(self, title):
-        self.title = title
-        self.url = "https://en.wikipedia.org/wiki/" + title
-        self.url_edit = "https://en.wikipedia.org/w/index.php?title=" + title + "&action=edit"
-
-    def __repr__(self):
-        return "Article('{0}')".format(self.title)
-
-    def __str__(self):
-        return self.url
-
-    @property
-    def references(self):
-        crawler = Crawler(self.title, "{{cite", "}}")
-        crawler.scrape(self.url_edit)
-        return [Reference(string) for string in crawler.data[self.url_edit]]
+import html
 
 
 class Reference:
+    x = 3
 
-    def __init__(self, string):
+class ArticleReference(Reference):
+
+    PARAMETERS = ("title", "first", "last", "first1", "last1", "first2",
+                  "last2", "publisher", "date", "url", "archive-url")
+
+    def __init__(self, reference_raw):
         for item in ["\n", "[[", "]]", "&nbsp"]:
             string = string.replace(item, "")
         string = string.replace("''", "\"")
-        self.string = unescape(string)
+        self.string = html.unescape(string)
 
     def __getitem__(self, parameter):
         if parameter in self:
@@ -100,6 +56,6 @@ class Reference:
 
     def __str__(self):
         string = ""
-        for parameter in PARAMETERS:
+        for parameter in ArticleReference.PARAMETERS:
             string += self[parameter] + "\t"
         return string.rstrip()
