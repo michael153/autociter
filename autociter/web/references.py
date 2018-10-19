@@ -24,8 +24,7 @@ def clean(string):
     string = string.replace("''", "\"")
     return html.unescape(string)
 
-
-#TODO: Improve this mess
+#TODO: Figure out consistensy with fields/parameters/attributes
 class ArticleReference:
     """A Wikipedia article reference."""
 
@@ -50,6 +49,7 @@ class ArticleReference:
 
         Arguments:
             attribute: A string representing the name of an attribute.
+            string: A string representing a Wikipedia-style citation.
 
         Returns:
             The value of the attribute, if present, else an empty string.
@@ -73,6 +73,7 @@ class ArticleReference:
     def __contains__(self, attribute):
         return self.data[attribute] != ""
 
+    #TODO: Fix csv parsing system
     def __csv__(self):
         """Return csv-compatible representation."""
         string = ""

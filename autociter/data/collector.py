@@ -26,6 +26,7 @@ GLOBAL_LOCK = threading.Lock()
 FILENAME = "data.txt"
 
 
+#TODO: Restructure all of this
 def aggregate(filename):
     """Aggregate Wikipedia article data (multithreaded).
 

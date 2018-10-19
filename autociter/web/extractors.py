@@ -102,13 +102,11 @@ class ArticleExtractor(Extractor):
 
     def __init__(self):
         Extractor.__init__(self, "<a href=\"/wiki/", "\"")
-
         def validate(result):
             for prefix in ArticleExtractor.IGNORED_NAMESPACES:
                 if prefix in result:
                     return False
             return True
-
         # A result is invalid if the result represents a special article.
         self.validate = validate
 

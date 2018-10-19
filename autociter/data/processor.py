@@ -16,7 +16,7 @@
 """Define function and objects for manipulating data files."""
 DELIMITER = "\t"
 
-
+#TODO: Fix csv writing system
 def create(filename, attributes=()):
     """Create new data file with a header."""
     with open(filename, "w", encoding="utf-8") as file:
@@ -38,7 +38,7 @@ def csv(item):
     """Return the csv-valid representation of an object."""
     return type(item).__csv__(item)
 
-
+#TODO: Move to different module?
 def prune(table):
     """Remove duplicate records from table."""
     seen = []
@@ -68,6 +68,7 @@ class Table:
         if filename:
             self.load(filename)
 
+    #TODO: Change docstring
     def load(self, filename):
         """Destructively loads data from a file."""
         with open(filename, encoding="utf-8") as file:
@@ -76,16 +77,11 @@ class Table:
         self.fields = header.split(DELIMITER)
         self.records = [Record(self.fields, r.split(DELIMITER)) for r in raws]
 
+    #TODO: Add more information
     def query(self, function):
         """Return a Table containing records that satisfy some function."""
         valid = [r for r in self.records if function(r)]
         return Table(self.fields, valid)
-
-    def remove(self, record):
-        """Remove all instances of a record."""
-        for i in range(len(self.records)):
-            if self.records[i] == record:
-                del self.records[i]
 
     def __getitem__(self, key):
         return self.records[key]
@@ -93,7 +89,8 @@ class Table:
     def __len__(self):
         return len(self.records)
 
-
+#TODO: Figure out consistensy in null return values
+#TODO: Addm ore infmrationin docstring
 class Record:
     """A record in a data table."""
 
@@ -111,6 +108,7 @@ class Record:
             return False
         return self.data == other.data
 
+    #TODO: Figure this thing out
     def __csv__(self):
         """Return csv-compatible representation."""
         string = ""
@@ -119,8 +117,8 @@ class Record:
         return string.rstrip()
 
     def __str__(self):
-        string = "\n"
+        string = ""
         for attribute in self.data:
             if self.data[attribute]:
                 string += attribute[0:5] + "\t" + self.data[attribute] + "\n"
-        return string
+        return string.rstrip()

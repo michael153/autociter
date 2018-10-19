@@ -27,7 +27,7 @@ def contains(*attributes):
         return True
     return query
 
-
+#TODO: Try change module for this to improve efficiency
 def valid_url(record):
     """Return true if the record url attribute is openable."""
     try:
@@ -48,3 +48,5 @@ def both(query1, query2):
     def query(record):
         return query1(record) and query2(record)
     return query
+
+#TODO: add negate query
