@@ -13,29 +13,59 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
+"""Define functions for collecting Wikipedia reference data."""
 import threading
 
-from wikibot.web.crawlers import ArticleCrawler
+from autociter.data.processor import create, write
 
-INPUT_FILE = "assets/featured.txt"
-OUTPUT_FILE = "assets/data.txt"
+from autociter.web.webpages import Article
+from autociter.web.crawlers import ArticleCrawler
+from autociter.web.references import ArticleReference
+
 GLOBAL_LOCK = threading.Lock()
 
 
-def main():
-    titles = lines(INPUT_FILE)
+def aggregate(input_file, output_file):
+    """Aggregate Wikipedia article references (multithreaded).
+
+    Arguments:
+        input_file: The path of a file containing newline-seperated article titles.
+        output_file: The path of the desired output data file.
+    """
+    titles = lines(input_file)
     articles = [Article(title) for title in titles]
-    threads = build(8, aggregate, articles)
-    create(OUTPUT_FILE)
+    threads = build(8, _aggregate, articles)
+    attributes = ArticleReference.ATTRIBUTES
+    create(output_file, attributes)
     execute(threads)
 
 
+def _aggregate(*articles):
+    """Write references collected from a list of articles."""
+    crawler = ArticleCrawler()
+    for article in articles:
+        cached = crawler.scrape(article)
+        with GLOBAL_LOCK:
+            write(cached, OUTPUT_FILE)
+
+
 def lines(filename):
+    """Return newline-seperated lines of a file."""
     with open(filename) as file:
         return file.read().splitlines()
 
 
 def build(num_threads, target, args):
+    """Create threads for multi-threaded processing.
+
+    Arguments:
+        num_threads: The number of threads.
+        target: The function that each thread will execute.
+        args: The arguments that will be passed into target.
+
+    Returns:
+        A list of threads.
+    """
     threads = []
     for thread_number in range(num_threads):
         assigned_args = allocate(args, thread_number, num_threads)
@@ -45,6 +75,7 @@ def build(num_threads, target, args):
 
 
 def allocate(args, thread_number, num_threads):
+    """Split arguments among threads."""
     args_per_thread = len(args) // num_threads
     start = thread_number * args_per_thread
     end = start + args_per_thread if thread_number < num_threads - 1 else None
@@ -52,19 +83,8 @@ def allocate(args, thread_number, num_threads):
 
 
 def execute(threads):
+    """Start then join threads."""
     for thread in threads:
         thread.start()
     for thread in threads:
         thread.join()
-
-
-def aggregate(*articles):
-    crawler = ArticleCrawler()
-    for article in articles:
-        cached = crawler.scrape(article)
-        with GLOBAL_LOCK:
-            write(cached, OUTPUT_FILE)
-
-
-if __name__ == "__main__":
-    main()

@@ -19,8 +19,3 @@ import re
 import json
 import time
 from boilerpipe.extract import Extractor
-
-
-
-
-

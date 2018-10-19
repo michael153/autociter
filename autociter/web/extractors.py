@@ -14,8 +14,8 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Extractor objects."""
-from webpages import Article
-from references import ArticleReference
+from autociter.web.webpages import Article
+from autociter.web.references import ArticleReference
 
 
 #pylint: disable=too-few-public-methods
@@ -23,7 +23,7 @@ class Extractor:
     """An object that assists with data exctraction.
 
     Extractor and its subclasses contain an extract method. The extract method
-    takes a string and extracts substrings that are inclusively enclosed by
+    takes a string and extracts substrings that are exclusively enclosed by
     the strings beg and end, which are defined in the __init__ method.
 
     The extract method may return the substrings as-is, or convert the strings
@@ -41,14 +41,15 @@ class Extractor:
         self.validate = lambda result: True
 
     def extract(self, string):
-        """Return valid substrings inclusively enclosed by beg and end."""
+        """Return valid substrings enclosed by beg and end."""
         results = []
         left, right, rest = 0, 0, string
         while self.beg in rest and self.end in rest:
             left = string.find(self.beg, right) + len(self.beg)
             right = string.find(self.end, left) + len(self.end)
-            start, end = left - len(self.beg), right - len(self.end)
-            results, rest = results + [string[start:end]], string[right:]
+            start, end = left, right - len(self.end)
+            results += [string[start:end]]
+            rest = string[right:]
         return [r for r in results if self.validate(r)]
 
 
@@ -92,7 +93,11 @@ class ArticleExtractor(Extractor):
     IGNORED_NAMESPACES = [
         "User:", "Wikipedia:", "File:", "MediaWiki:", "Template:", "Help:",
         "Category:", "Portal:", "Book:", "Draft:", "TimedText:", "Module:",
-        "Gadget:", "Special:", "Main_Page"
+        "Gadget:", "Special:", "Main_Page", "Talk:", "User_talk:",
+        "Wikipedia_talk:", "File_talk:", "MediaWiki_talk:", "Template_talk:",
+        "Help_talk:", "Category_talk:", "Portal_talk:", "Book_talk:",
+        "Draft_talk:", "TimedText_talk:", "Module_talk:", "Gadget_talk:",
+        "Gadget_definition_talk:", "Media:"
     ]
 
     def __init__(self):
@@ -119,4 +124,4 @@ class ArticleExtractor(Extractor):
                     of other articles (e.g. the "featured articles" article.)
         """
         titles = Extractor.extract(self, string)
-        return [Article(t) for t in titles]
+        return [Article("https://en.wikipedia.org/wiki/" + t) for t in titles]

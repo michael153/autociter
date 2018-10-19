@@ -16,8 +16,8 @@
 """Test various functions and their practicality / success rate"""
 
 
-import train
-import pipeline
+import autociter.core.train as train
+import autociter.core.pipeline as pipeline
 
 def test_scrape_author_in_article(info, num_points=False):
 	"""For a list of url, author pairs, find the success rate of scraping the url and
@@ -34,7 +34,7 @@ def test_scrape_author_in_article(info, num_points=False):
 		print("Testing {0} datapoints... 'test_scrape_author_in_article'\n\n".format(num_points))
 	else:
 		print("Testing datapoints... 'test_scrape_author_in_article'\n\n")
-		
+
 	label_lookup = info[1]
 	success, total, scrape_failure = 0, 0, 0
 	datapoints = info[0][:num_points] if num_points else info[0]
@@ -54,12 +54,10 @@ def test_scrape_author_in_article(info, num_points=False):
 		total += 1
 	return (success, total, scrape_failure)
 
-info = pipeline.get_wikipedia_article_links_info('assets/data.txt', ['url', 'authors'])
+info = pipeline.get_wikipedia_article_links_info('resources/data.txt', ['url', 'authors'])
 result = test_scrape_author_in_article(info, 50)
 
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(result[0],
 																	 result[1],
 																	 result[2],
 																	 (100.0*result[0])/result[1]))
-
-

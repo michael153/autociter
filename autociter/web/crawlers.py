@@ -16,8 +16,8 @@
 """Define Crawler objects."""
 from urllib import error
 
-from extractors import ReferenceExtractor1, ReferenceExtractor2, ArticleExtractor
-from webpages import Webpage, Article
+from autociter.web.extractors import ReferenceExtractor1, ReferenceExtractor2, ArticleExtractor
+from autociter.web.webpages import Webpage, Article
 
 
 #pylint: disable=too-few-public-methods

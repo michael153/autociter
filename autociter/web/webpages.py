@@ -16,30 +16,32 @@
 """Define Webpage and Article objects."""
 from urllib import request
 
-from crawlers import ArticleCrawler
-
 
 class Webpage:
     """A generic webpage."""
 
     def __init__(self, url):
-        """Initialize a Webpage instance.
-
-        url must be a string with the prefix "https://".
-
-        Arguments:
-            url: The webpage's url
-        """
         self.url = url
-        client = request.urlopen(url)
-        bytecode = client.read()
-        self.source = bytecode.decode("utf-8", "replace")
+        self._source = None
 
     def __repr__(self):
         return "Webpage('{0}')".format(self.url)
 
     def __str__(self):
         return self.url
+
+    @property
+    def source(self):
+        """Return the source code of a webpage.
+
+        The source code is retrieved once, when the source property is first
+        called. Thereafter, the source code is cached in the _source attribute.
+        """
+        if not self._source:
+            client = request.urlopen(self.url)
+            bytecode = client.read()
+            self._source = bytecode.decode("utf-8", "replace")
+        return self._source
 
 
 class Article(Webpage):
@@ -54,13 +56,5 @@ class Article(Webpage):
     def __repr__(self):
         return "Article('{0}')".format(self.url)
 
-    @property
-    def references(self):
-        """Compute and return this article's citations as Reference objects.
-
-        An article's citations are computed once, when the references method is first
-        called. Thereafter, the references method is unused, as it is replaced by the
-        references instance attribute.
-        """
-        self.references = ArticleCrawler().scrape(self)
-        return self.references
+    def __str__(self):
+        return self.title
