@@ -23,30 +23,31 @@ from autociter.web.crawlers import ArticleCrawler
 from autociter.web.references import ArticleReference
 
 GLOBAL_LOCK = threading.Lock()
+FILENAME = "data.txt"
 
 
-def aggregate(input_file, output_file):
-    """Aggregate Wikipedia article references (multithreaded).
+def aggregate(filename):
+    """Aggregate Wikipedia article data (multithreaded).
 
     Arguments:
         input_file: The path of a file containing newline-seperated article titles.
-        output_file: The path of the desired output data file.
+        output_filename: The path of the desired output data file.
     """
-    titles = lines(input_file)
+    titles = lines(filename)
     articles = [Article(title) for title in titles]
     threads = build(8, _aggregate, articles)
     attributes = ArticleReference.ATTRIBUTES
-    create(output_file, attributes)
+    create(FILENAME, attributes)
     execute(threads)
 
 
 def _aggregate(*articles):
-    """Write references collected from a list of articles."""
+    """Write reference data collected from a list of articles."""
     crawler = ArticleCrawler()
     for article in articles:
         cached = crawler.scrape(article)
         with GLOBAL_LOCK:
-            write(cached, OUTPUT_FILE)
+            write(cached, FILENAME)
 
 
 def lines(filename):
@@ -56,7 +57,7 @@ def lines(filename):
 
 
 def build(num_threads, target, args):
-    """Create threads for multi-threaded processing.
+    """Create threads for multi-threaded aggregation.
 
     Arguments:
         num_threads: The number of threads.
