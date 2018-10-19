@@ -40,11 +40,9 @@ class Table:
     def __init__(self, filename):
         with open(filename, encoding="utf-8") as file:
             lines = file.read().splitlines()
-        header, records = lines[0], lines[1:]
+        header, raws = lines[0], lines[1:]
         self.fields = header.split(DELIMITER)
-        self.records = [
-            Record(self.fields, r.split(DELIMITER)) for r in records
-        ]
+        self.records = [Record(self.fields, r.split(DELIMITER)) for r in raws]
 
     def __getitem__(self, key):
         return self.records[key]
