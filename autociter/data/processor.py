@@ -34,9 +34,9 @@ def write(records, filename):
             file.write(csv(record) + "\n")
 
 
-def csv(object):
+def csv(item):
     """Return the csv-valid representation of an object."""
-    return type(object).__csv__(object)
+    return type(item).__csv__(item)
 
 
 def prune(table):
