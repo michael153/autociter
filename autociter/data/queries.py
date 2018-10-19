@@ -14,10 +14,12 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define query functions."""
+from urllib import request
+from urllib import error
 
 
 def contains(*attributes):
-    """Returns true if record contains values for all given attributes."""
+    """Return true if record contains values for all given attributes."""
     def query(record):
         for attribute in attributes:
             if not attribute in record:
@@ -26,14 +28,23 @@ def contains(*attributes):
     return query
 
 
+def valid_url(record):
+    """Return true if the record url attribute is openable."""
+    try:
+        request.urlopen(record["url"])
+        return True
+    except (error.HTTPError, error.URLError, WindowsError, ValueError):
+        return False
+
+
 def either(query1, query2):
-    """Returns true if record satisfies either query1 or query2."""
+    """Return true if record satisfies either query1 or query2."""
     def query(record):
         return query1(record) or query2(record)
     return query
 
 def both(query1, query2):
-    """Returns true if record satisfies both query1 and query2."""
+    """Return true if record satisfies both query1 and query2."""
     def query(record):
         return query1(record) and query2(record)
     return query

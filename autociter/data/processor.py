@@ -38,6 +38,17 @@ def csv(object):
     """Return the csv-valid representation of an object."""
     return type(object).__csv__(object)
 
+
+def prune(table):
+    """Remove duplicate records from table."""
+    seen = []
+    for record in table.records:
+        if record in seen:
+            del record
+        else:
+            seen.append(record)
+
+
 class Table:
     """A generic data table."""
 
@@ -70,6 +81,12 @@ class Table:
         valid = [r for r in self.records if function(r)]
         return Table(self.fields, valid)
 
+    def remove(self, record):
+        """Remove all instances of a record."""
+        for i in range(len(self.records)):
+            if self.records[i] == record:
+                del self.records[i]
+
     def __getitem__(self, key):
         return self.records[key]
 
@@ -89,6 +106,11 @@ class Record:
     def __contains__(self, field):
         return bool(self.data.get(field, False))
 
+    def __eq__(self, other):
+        if not isinstance(other, Record):
+            return False
+        return self.data == other.data
+
     def __csv__(self):
         """Return csv-compatible representation."""
         string = ""
@@ -97,7 +119,7 @@ class Record:
         return string.rstrip()
 
     def __str__(self):
-        string = ""
+        string = "\n"
         for attribute in self.data:
             if self.data[attribute]:
                 string += attribute[0:5] + "\t" + self.data[attribute] + "\n"
