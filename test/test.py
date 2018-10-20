@@ -50,7 +50,7 @@ def test_scrape_author_in_article(info, num_points=False):
 		total += 1
 	return (success, total, scrape_failure)
 
-info = pipeline.get_wikipedia_article_links_info('assets/data.txt', ['url', 'authors'])
+info = pipeline.get_wikipedia_article_links_info('../../resources/data.txt', ['url', 'authors'])
 result = test_scrape_author_in_article(info, 25)
 
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(result[0],
