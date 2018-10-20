@@ -16,6 +16,7 @@
 """Test various functions and their practicality / success rate"""
 
 
+import autociter.data.standardize as standardize
 import autociter.core.train as train
 import autociter.core.pipeline as pipeline
 
@@ -23,12 +24,6 @@ def test_scrape_author_in_article(info, num_points=False):
 	"""For a list of url, author pairs, find the success rate of scraping the url and
 	finding the authors within the text
 	"""
-
-	def standardize_author_name(author):
-		"""Standardize author name formatting so that author name can be properly
-		located
-		"""
-		return author.lower().replace('.', '').replace('-', ' ')
 
 	if num_points:
 		print("Testing {0} datapoints... 'test_scrape_author_in_article'\n\n".format(num_points))
@@ -42,11 +37,12 @@ def test_scrape_author_in_article(info, num_points=False):
 	for t in datapoints:
 		url = t[label_lookup['url']]
 		authors = t[label_lookup['authors']]
-		text = pipeline.get_text_from_url(url).lower()
+		text = standardize.std_text(pipeline.get_text_from_url(url))
 		if text == "":
 			scrape_failure += 1
 			continue
-		converted_authors = [standardize_author_name(a) for a in authors]
+		converted_authors = [standardize.std_word(a, 'authors') for a in authors]
+		print(str(converted_authors))
 		found = all([i in text for i in converted_authors])
 		if not found:
 			print("\nFailed case: {0}\n".format((url, authors)))
@@ -54,10 +50,12 @@ def test_scrape_author_in_article(info, num_points=False):
 		total += 1
 	return (success, total, scrape_failure)
 
-info = pipeline.get_wikipedia_article_links_info('resources/data.txt', ['url', 'authors'])
-result = test_scrape_author_in_article(info, 50)
+info = pipeline.get_wikipedia_article_links_info('assets/data.txt', ['url', 'authors'])
+result = test_scrape_author_in_article(info, 25)
 
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(result[0],
 																	 result[1],
 																	 result[2],
 																	 (100.0*result[0])/result[1]))
+
+
