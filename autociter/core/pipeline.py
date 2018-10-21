@@ -307,11 +307,10 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
 
 # Data aggregation
 if __name__ == '__main__':
-    info = get_wikipedia_article_links_info('resources/data.txt', ['url', 'authors', 'date'])
+    resources_path = os.path + '/../resources'
+    info = get_wikipedia_article_links_info(resources_path + '/data.txt', ['url', 'authors', 'date'])
     data = aggregate_data(info, 50)
-    save_data('assets/savedArticleData.dat', data)
+    save_data(resources_path + '/savedArticleData.dat', data)
 
 # d = get_saved_data('assets/savedArticleData.dat')
 # print(json.dumps(d, sort_keys=True, indent=4))
-
-
