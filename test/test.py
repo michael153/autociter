@@ -14,7 +14,7 @@
 #
 # Author: Michael Wan <m.wan@berkeley.edu>
 """Test various functions and their practicality / success rate"""
-
+import os
 
 import autociter.data.standardize as standardize
 import autociter.core.train as train
@@ -50,12 +50,10 @@ def test_scrape_author_in_article(info, num_points=False):
 		total += 1
 	return (success, total, scrape_failure)
 
-info = pipeline.get_wikipedia_article_links_info('../../resources/data.txt', ['url', 'authors'])
+info = pipeline.get_wikipedia_article_links_info(os.path + '/../resources/data.txt', ['url', 'authors'])
 result = test_scrape_author_in_article(info, 25)
 
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(result[0],
 																	 result[1],
 																	 result[2],
 																	 (100.0*result[0])/result[1]))
-
-
