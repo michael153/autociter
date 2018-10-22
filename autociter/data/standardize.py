@@ -43,13 +43,13 @@ def std_table(table):
 def std_text(text):
 	return text.lower()
 
-def std_word(word, data_type):
+def std_data(data, data_type):
 	"""Standardized text formatting so that words and fields can be properly
 	located within a text
 	"""
 	if data_type == 'author':
-		return word.lower().replace('.', '').replace('-', ' ')
+		return [d.lower().replace('.', '').replace('-', ' ') for d in data]
 	elif data_type == 'date':
-		return word.lower().replace(',', ' ').replace('-', ' ')
-	return word
+		return data.lower().replace(',', ' ').replace('-', ' ')
+	return data
 

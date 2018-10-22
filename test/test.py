@@ -30,18 +30,16 @@ def test_scrape_author_in_article(info, num_points=False):
     else:
         print("Testing datapoints... 'test_scrape_author_in_article'\n\n")
 
-    label_lookup = info[1]
+    datapoints, label_lookup = info[0][:num_points] if num_points else info[0], info[1]
     success, total, scrape_failure = 0, 0, 0
-    datapoints = info[0][:num_points] if num_points else info[0]
 
     for t in datapoints:
-        url = t[label_lookup['url']]
-        authors = t[label_lookup['author']]
+        url, authors = t[label_lookup['url']], t[label_lookup['author']]
         text = standardize.std_text(pipeline.get_text_from_url(url))
         if text == "":
             scrape_failure += 1
             continue
-        converted_authors = [standardize.std_word(a, 'author') for a in authors]
+        converted_authors = [standardize.std_data(a, 'author') for a in authors]
         print(str(converted_authors))
         found = all([i in text for i in converted_authors])
         if not found:

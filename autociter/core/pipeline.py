@@ -90,18 +90,6 @@ def get_wikipedia_article_links_info(file, args):
 
     print("Reading Wikipedia Article Links from...", file)
 
-    def get_attribute(r, arg):
-        """Given a row entry in Table r, return the proper value in the table that
-        corresponds to the argument arg
-
-        >>> get_attribute(t[0], "url")
-        'http://www.iwm.org.uk/memorials/item/memorial/2814'
-        """
-        if arg in ['author', 'title', 'publisher', 'date', 'url', 'archive-url']:
-            return r[arg]
-        else:
-            return ""
-
     t = standardize.std_table(Table(file)).query(queries.contains(*args))    
     data = [tuple([rec[a] for a in args]) for rec in t.records]
     # Return labels in order to remember what each index in a datapoint represents
@@ -110,22 +98,27 @@ def get_wikipedia_article_links_info(file, args):
 
 def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
+
+    def get_index_of_word(text, word):
+        index = text.find(word)
+        if index != -1:
+            return (index, index + len(word))
+        else:
+            return (-1, -1)
+
     location_dict = {}
     std_text = standardize.std_text(text)
     for k, v in citation_dict.items():
-        if type(v) == list:
-            for i in v:
-                word = standardize.std_word(i, k)
-                index = std_text.find(word)
-                if index != -1:
-                    if k not in location_dict:
-                        location_dict[k] = []
-                    location_dict[k].append((index, index + len(word)))
-        elif v != "":
-            word = standardize.std_word(v, k)
-            index = std_text.find(word)
-            if index != -1:
-                location_dict[k] = (index, index + len(word))
+        if v:
+            data_field = standardize.std_data(v, k)
+            if type(data_field) == list:
+                pos = [get_index_of_word(std_text, d) for d in data_field if d in std_text]
+                if pos:
+                    location_dict[k] = pos
+            else:
+                pos =  get_index_of_word(std_text, data_field)
+                if pos != (-1, -1):
+                    location_dict[k] = pos
     return location_dict
 
 def aggregate_data(info, num_points=False):
@@ -143,7 +136,6 @@ def aggregate_data(info, num_points=False):
         datapoints = datapoints[:num_points]
     for entry in datapoints:
         url = entry[label_lookup['url']]
-        authors = entry[1]
         citation_dict = {x: entry[label_lookup[x]] for x in label_lookup.keys()}
         text = slice_text(get_text_from_url(url))
         if text != "":
@@ -165,6 +157,8 @@ def save_data(fileName, data):
         data, a list of dicts, each dict contains the citation information, url, and text
               vectorization of an article
     """
+    AGGREGATE_KEYS = ('article_one_hot', 'locs')
+
     if not os.path.isfile(fileName):
         f = open(fileName, "w+")
         f.write('{}')
@@ -174,12 +168,12 @@ def save_data(fileName, data):
     except:
         saved_dict = {}
     for datapoint in data:
-        key = datapoint['url']
-        saved_dict[key] = {}
-        for keys, val in datapoint['citation_info'].items():
-            saved_dict[key][keys] = val
-        saved_dict[key]['article_one_hot'] = datapoint['article_one_hot']
-        saved_dict[key]['locs'] = datapoint['locs']
+        chosen_key = datapoint['url']
+        saved_dict[chosen_key] = {}
+        for k, v in datapoint['citation_info'].items():
+            saved_dict[chosen_key][k] = v
+        for k in AGGREGATE_KEYS:
+            saved_dict[chosen_key][k] = datapoint[k] 
     with open(fileName, 'w') as out:
         json.dump(saved_dict, out, sort_keys=True, indent=4)
 
