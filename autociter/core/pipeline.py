@@ -24,6 +24,7 @@ import os.path
 from autociter.data.processor import Table
 from boilerpipe.extract import Extractor
 import autociter.data.standardize as standardize
+import autociter.data.queries as queries
 
 ENCODING_RANGE = 66
 
@@ -87,6 +88,8 @@ def get_wikipedia_article_links_info(file, args):
     >>> get_wikipedia_article_links_info('asserts/data.txt', ['url', 'author'])
     """
 
+    print("Reading Wikipedia Article Links from...", file)
+
     def get_attribute(r, arg):
         """Given a row entry in Table r, return the proper value in the table that
         corresponds to the argument arg
@@ -94,27 +97,16 @@ def get_wikipedia_article_links_info(file, args):
         >>> get_attribute(t[0], "url")
         'http://www.iwm.org.uk/memorials/item/memorial/2814'
         """
-        if arg in ['title', 'publisher', 'date', 'url', 'archive-url']:
+        if arg in ['author', 'title', 'publisher', 'date', 'url', 'archive-url']:
             return r[arg]
-        elif arg == 'authors':
-            temp_list = [(r["first"], r["last"]), (r["first1"], r["last1"]), (r["first2"], r["last2"])]
-            validate_author = lambda x: x[0].strip() not in ["", "null"] and x[1].strip() not in ["", "null"]
-            return list(set([' '.join(a) for a in temp_list if validate_author(a)]))
+        else:
+            return ""
 
-    t = Table(file)
-    data = [[] for i in range(len(args))]
-    # Prepare urls and authors
-    for r in t.records:
-        # validate = lambda x: get_attribute(x, 'url') not in ["", [], "null"] #Make sure that url is valid for each table entry
-        validate = lambda x: all([get_attribute(x, arg) not in ["", [], "null"] for arg in args]) #Make sure that all datapoints are valid for each table entry
-        if validate(r):
-            for i in range(len(args)):
-                arg = args[i]
-                data[i].append(get_attribute(r, arg))
-    datapoints = list(zip(*data))
+    t = standardize.std_table(Table(file)).query(queries.contains(*args))    
+    data = [tuple([rec[a] for a in args]) for rec in t.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
-    return (datapoints, labels)
+    return (data, labels)
 
 def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
@@ -129,7 +121,7 @@ def locate_attributes(text, citation_dict):
                     if k not in location_dict:
                         location_dict[k] = []
                     location_dict[k].append((index, index + len(word)))
-        elif v not in ["", "null"]:
+        elif v != "":
             word = standardize.std_word(v, k)
             index = std_text.find(word)
             if index != -1:
@@ -308,8 +300,8 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
 
 # Data aggregation
 if __name__ == '__main__':
-    resources_path = os.path.realpath(__file__) + '/../../resources'
-    info = get_wikipedia_article_links_info(resources_path + '/data.txt', ['url', 'authors', 'date'])
+    resources_path = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
+    info = get_wikipedia_article_links_info(resources_path + '/data.txt', ['url', 'author', 'date'])
     data = aggregate_data(info, 50)
     save_data(resources_path + '/savedArticleData.dat', data)
 

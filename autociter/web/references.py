@@ -78,5 +78,5 @@ class ArticleReference:
         """Return csv-compatible representation."""
         string = ""
         for attribute in ArticleReference.ATTRIBUTES:
-            string += self.data[attribute] + "\t"
+            string += str(self.data[attribute]) + "\t"
         return string.rstrip()

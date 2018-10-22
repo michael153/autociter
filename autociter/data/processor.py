@@ -83,6 +83,11 @@ class Table:
         valid = [r for r in self.records if function(r)]
         return Table(fields=self.fields, records=valid)
 
+    def add_record(self, record):
+        if type(self.records) == tuple:
+            self.records = []
+        self.records.append(record)
+
     def __getitem__(self, key):
         return self.records[key]
 
@@ -120,5 +125,5 @@ class Record:
         string = ""
         for attribute in self.data:
             if self.data[attribute]:
-                string += attribute[0:5] + "\t" + self.data[attribute] + "\n"
+                string += attribute[0:5] + "\t" + str(self.data[attribute]) + "\n"
         return string.rstrip()

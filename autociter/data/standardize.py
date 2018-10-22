@@ -16,6 +16,30 @@
 """Library that provides method to standardize certain words so they can properly
 located within a text"""
 
+from autociter.data.processor import Table, Record
+import autociter.data.queries as queries
+
+def std_table(table):
+	std_fields = ["title", "author", "publisher", "date", "url", "archive-url"]
+	ret = Table(fields=std_fields)
+	for rec in table.records:
+		author_fields = [("first", "last"), ("first1", "last1"), ("first2", "last2")]
+		authors = []
+		for i in author_fields:
+			author = (rec[i[0]] + " " + rec[i[1]]).strip()
+			if author != "":
+				authors.append(author)
+		values = []
+		for attr in std_fields:
+			if queries.contains(attr)(rec):
+				values.append(rec[attr])
+			elif attr == 'author':
+				values.append(list(set(authors)))
+			else:
+				values.append("")
+		ret.add_record(Record(std_fields, values))
+	return ret
+
 def std_text(text):
 	return text.lower()
 
@@ -23,7 +47,7 @@ def std_word(word, data_type):
 	"""Standardized text formatting so that words and fields can be properly
 	located within a text
 	"""
-	if data_type == 'authors':
+	if data_type == 'author':
 		return word.lower().replace('.', '').replace('-', ' ')
 	elif data_type == 'date':
 		return word.lower().replace(',', ' ').replace('-', ' ')
