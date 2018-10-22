@@ -52,7 +52,7 @@ def prune(table):
 class Table:
     """A generic data table."""
 
-    def __init__(self, fields=(), records=(), filename=None):
+    def __init__(self, filename=None, fields=(), records=()):
         """Initializes data table.
 
         If a filename is given, the file at that path is loaded and its data
@@ -81,7 +81,7 @@ class Table:
     def query(self, function):
         """Return a Table containing records that satisfy some function."""
         valid = [r for r in self.records if function(r)]
-        return Table(self.fields, valid)
+        return Table(fields=self.fields, records=valid)
 
     def __getitem__(self, key):
         return self.records[key]
