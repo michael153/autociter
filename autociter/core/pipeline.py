@@ -18,6 +18,7 @@
 import re
 import json
 import time
+import os
 import os.path
 
 from autociter.data.processor import Table
@@ -307,7 +308,7 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
 
 # Data aggregation
 if __name__ == '__main__':
-    resources_path = os.path + '/../resources'
+    resources_path = os.path.realpath(__file__) + '/../../resources'
     info = get_wikipedia_article_links_info(resources_path + '/data.txt', ['url', 'authors', 'date'])
     data = aggregate_data(info, 50)
     save_data(resources_path + '/savedArticleData.dat', data)
