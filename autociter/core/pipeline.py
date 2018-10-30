@@ -21,7 +21,7 @@ import time
 import os
 import os.path
 
-from autociter.data.processor import Table
+from autociter.data.storage import Table
 from boilerpipe.extract import Extractor
 import autociter.data.standardize as standardize
 import autociter.data.queries as queries

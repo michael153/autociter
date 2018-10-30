@@ -16,7 +16,7 @@
 """Library that provides method to standardize certain words so they can properly
 located within a text"""
 
-from autociter.data.processor import Table, Record
+from autociter.data.storage import Table, Record
 import autociter.data.queries as queries
 
 def std_table(table):
