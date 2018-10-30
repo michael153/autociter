@@ -15,46 +15,42 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 import unittest
 
-import test.server as server
+import tests.server as server
 from autociter.web.webpages import Webpage
 
 
 class WebpageTest(unittest.TestCase):
 
-	@classmethod
-	def setUpClass(cls):
-		server.start()
+    @classmethod
+    def setUpClass(cls):
+        server.start()
 
-	def testUrl(self):
-		w = Webpage(server.url)
-		self.assertEqual(server.url, w.url)
+    def testUrl(self):
+        w = Webpage(server.url)
+        self.assertEqual(server.url, w.url)
 
-	def testRepr(self):
-		w = Webpage(server.url)
-		self.assertEqual("Webpage('" + server.url + "')", repr(w))
+    def testRepr(self):
+        w = Webpage(server.url)
+        self.assertEqual("Webpage('" + server.url + "')", repr(w))
 
-	def testStr(self):
-		w = Webpage(server.url)
-		self.assertEqual(server.url, str(w))
+    def testStr(self):
+        w = Webpage(server.url)
+        self.assertEqual(server.url, str(w))
 
-	def testSource_firstCallReturnsCorrectly(self):
-		w = Webpage(server.url)
-		with open("index.html") as source:
-			self.assertEqual(w.source, source.read())
+    def testEquals(self):
+        w1 = Webpage(server.url)
+        w2 = Webpage(server.url)
+        self.assertEqual(w1, w2)
 
-	def testSource_secondCallReturnsCorrectly(self):
-		w = Webpage(server.url)
-		w.source # First call to source property
-		cached = w.source # Second call to source property
-		with open("index.html") as source:
-			self.assertEqual(cached, source.read())
+    def testSource(self):
+        w = Webpage(server.url)
+        with open("index.html") as source:
+            self.assertEqual(w.source, source.read())
 
-	def testSource_secondCallIsOptimized(self):
-		w = Webpage(server.url)
-		w.source # First call to source property
-		cached = w.source # Second call to source property
-		self.assertIs(cached, w._source)
+    def testMarkdown(self):
+        w = Webpage(server.url)
+        self.assertEqual("# Heading\n\nThis is a paragraph.", w.markdown)
 
-	@classmethod
-	def tearDownClass(cls):
-		server.end()
+    @classmethod
+    def tearDownClass(cls):
+        server.end()

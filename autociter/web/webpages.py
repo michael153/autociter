@@ -30,6 +30,11 @@ class Webpage:
     def __str__(self):
         return self.url
 
+    def __eq__(self, other):
+        if not isinstance(other, Webpage):
+            return False
+        return self.url == other.url
+
     @property
     def source(self):
         """Return the source code of a webpage."""
@@ -39,26 +44,26 @@ class Webpage:
 
     @property
     def markdown(self):
-        """Return the source code of a webpage in markdown formatting.
-
-        The markdown text is calculated once, when the source property is first
-        called. Thereafter, the markdown is cached in the _source attribute.
-        """
+        """Return the source code of a webpage in markdown formatting."""
         parser = html2text.HTML2Text()
         parser.ignore_images = True
         parser.ignore_links = True
-        parser.skip_internal_links = True
-        parser.ignore_anchors = True
-        return parser.handle(self.source)
+        return parser.handle(self.source).rstrip()
+
 
 class Article(Webpage):
-    """A Wikipedia article."""
+    """A Wikipedia article.
+
+    Each article has a corresponding page where users can edit the content of
+    the article. In this page, one can see the Wikipedia-style citations (for
+    example, {{cite web | ... | ... | ... }}).
+    """
 
     def __init__(self, url):
         Webpage.__init__(self, url)
         self.title = url[url.find("/wiki/") + len("/wiki/"):]
         edit_url = "https://en.wikipedia.org/w/index.php?title=" + self.title + "&action=edit"
-        self.edit = Webpage(edit_url)
+        self.edit_page = Webpage(edit_url)
 
     def __repr__(self):
         return "Article('{0}')".format(self.url)
