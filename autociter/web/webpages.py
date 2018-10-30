@@ -15,6 +15,7 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Webpage and Article objects."""
 from urllib import request
+import html2text
 
 
 class Webpage:
@@ -22,7 +23,6 @@ class Webpage:
 
     def __init__(self, url):
         self.url = url
-        self._source = None
 
     def __repr__(self):
         return "Webpage('{0}')".format(self.url)
@@ -32,17 +32,24 @@ class Webpage:
 
     @property
     def source(self):
-        """Return the source code of a webpage.
+        """Return the source code of a webpage."""
+        client = request.urlopen(self.url)
+        bytecode = client.read()
+        return bytecode.decode("utf-8", "replace")
 
-        The source code is retrieved once, when the source property is first
-        called. Thereafter, the source code is cached in the _source attribute.
+    @property
+    def markdown(self):
+        """Return the source code of a webpage in markdown formatting.
+
+        The markdown text is calculated once, when the source property is first
+        called. Thereafter, the markdown is cached in the _source attribute.
         """
-        if not self._source:
-            client = request.urlopen(self.url)
-            bytecode = client.read()
-            self._source = bytecode.decode("utf-8", "replace")
-        return self._source
-
+        parser = html2text.HTML2Text()
+        parser.ignore_images = True
+        parser.ignore_links = True
+        parser.skip_internal_links = True
+        parser.ignore_anchors = True
+        return parser.handle(self.source)
 
 class Article(Webpage):
     """A Wikipedia article."""
