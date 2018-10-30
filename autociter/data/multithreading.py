@@ -16,49 +16,11 @@
 """Define functions for collecting Wikipedia reference data."""
 import threading
 
-from autociter.data.processor import create, write
-
-from autociter.web.webpages import Article
-from autociter.web.crawlers import ArticleCrawler
-from autociter.web.references import ArticleReference
-
 GLOBAL_LOCK = threading.Lock()
-FILENAME = "data.txt"
-
-
-#TODO: Restructure all of this
-def aggregate(filename):
-    """Aggregate Wikipedia article data (multithreaded).
-
-    Arguments:
-        input_file: The path of a file containing newline-seperated article titles.
-        output_filename: The path of the desired output data file.
-    """
-    titles = lines(filename)
-    articles = [Article(title) for title in titles]
-    threads = build(8, _aggregate, articles)
-    attributes = ArticleReference.ATTRIBUTES
-    create(FILENAME, attributes)
-    execute(threads)
-
-
-def _aggregate(*articles):
-    """Write reference data collected from a list of articles."""
-    crawler = ArticleCrawler()
-    for article in articles:
-        cached = crawler.scrape(article)
-        with GLOBAL_LOCK:
-            write(cached, FILENAME)
-
-
-def lines(filename):
-    """Return newline-seperated lines of a file."""
-    with open(filename) as file:
-        return file.read().splitlines()
 
 
 def build(num_threads, target, args):
-    """Create threads for multi-threaded aggregation.
+    """Create threads for multi-threaded data collection.
 
     Arguments:
         num_threads: The number of threads.
