@@ -55,7 +55,7 @@ class Article(Webpage):
     """A Wikipedia article.
 
     Each article has a corresponding page where users can edit the content of
-    the article. In this page, one can see the Wikipedia-style citations (for
+    the article. In this page, users can see the Wikipedia-style citations (for
     example, {{cite web | ... | ... | ... }}).
     """
 
