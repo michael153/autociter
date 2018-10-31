@@ -98,6 +98,8 @@ class Record:
     DELIMITER = "\t"
 
     def __init__(self, fields, values):
+        self.fields = fields
+        self.values = values
         self.data = dict(zip(fields, values))
 
     def __getitem__(self, field):

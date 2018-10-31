@@ -16,43 +16,64 @@
 """Test various functions and their practicality / success rate"""
 import os
 
+from termcolor import colored
+
 import autociter.data.standardize as standardize
-import autociter.core.train as train
 import autociter.core.pipeline as pipeline
 
-def test_scrape_author_in_article(info, num_points=False):
+
+def find_attr_in_text(article_text, single_field):
+    """For a text (representing the article), check whether the string
+    single_field can be located within the text
+    """
+    return single_field in article_text
+
+def find_attr_in_scraped_article(info, attributes, num_points=False):
     """For a list of url, author pairs, find the success rate of scraping the url and
     finding the authors within the text
     """
 
     if num_points:
-        print("Testing {0} datapoints... 'test_scrape_author_in_article'\n\n".format(num_points))
+        print("Testing {0} datapoints... 'find_attr_in_scraped_article'\n\n".format(num_points))
     else:
-        print("Testing datapoints... 'test_scrape_author_in_article'\n\n")
+        print("Testing datapoints... 'find_attr_in_scraped_article'\n\n")
 
-    datapoints, label_lookup = info[0][:num_points] if num_points else info[0], info[1]
+    datapoints = info[0][:num_points] if num_points else info[0]
     success, total, scrape_failure = 0, 0, 0
 
-    for t in datapoints:
-        url, authors = t[label_lookup['url']], t[label_lookup['author']]
+    for entry in datapoints:
+        url = entry[info[1]['url']]
+        data_fields = [entry[info[1][attr]] for attr in attributes]
         text = standardize.std_text(pipeline.get_text_from_url(url))
         if text == "":
             scrape_failure += 1
             continue
-        converted_authors = [standardize.std_data(a, 'author') for a in authors]
-        print(str(converted_authors))
-        found = all([i in text for i in converted_authors])
-        if not found:
-            print("\nFailed case: {0}\n".format((url, authors)))
-        success += found
+
+        std_fields = [standardize.std_data(f, a) for f, a in zip(data_fields, attributes)]
+        pass_case = True
+
+        for field in std_fields:
+            if isinstance(field, list):
+                for i in field:
+                    pass_case = pass_case and find_attr_in_text(text, i)
+            else:
+                pass_case = pass_case and find_attr_in_text(text, field)
+            if not pass_case:
+                break
+
+        if not pass_case:
+            print(colored("Failed case: {0}".format((url, data_fields)), 'red'))
+
+        success += pass_case
         total += 1
     return (success, total, scrape_failure)
 
-resources_path = os.path.dirname(os.path.realpath(__file__)) + '/../resources'
-info = pipeline.get_wikipedia_article_links_info(resources_path + '/data.txt', ['url', 'author'])
-result = test_scrape_author_in_article(info, 25)
+RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../resources'
+INFO = pipeline.get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author'])
+NUM_DATA_POINTS = 40
+RES = find_attr_in_scraped_article(INFO, ['author'], NUM_DATA_POINTS)
 
-print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(result[0],
-                                                                     result[1],
-                                                                     result[2],
-                                                                     (100.0*result[0])/result[1]))
+print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(RES[0],
+                                                                     RES[1],
+                                                                     RES[2],
+                                                                     (100.0*RES[0])/RES[1]))

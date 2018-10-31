@@ -4,7 +4,7 @@
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
 #
-#       http://www.apache.org/licenses/LICENSE-2.0
+#      http://www.apache.org/licenses/LICENSE-2.0
 #
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,7 @@ def std_table(table):
 				values.append(list(set(authors)))
 			else:
 				values.append("")
-		ret.add_record(Record(std_fields, values))
+		ret.add(Record(std_fields, values))
 	return ret
 
 def std_text(text):
@@ -51,5 +51,7 @@ def std_data(data, data_type):
 		return [d.lower().replace('.', '').replace('-', ' ') for d in data]
 	elif data_type == 'date':
 		return data.lower().replace(',', ' ').replace('-', ' ')
+	elif data_type == 'title':
+		return data.title()
 	return data
 
