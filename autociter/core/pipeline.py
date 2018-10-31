@@ -41,27 +41,30 @@ import autociter.web.markdown as markdown
 
 
 SUPPORTED_SPECIAL_CHARS = ['-', ':', '.', ' ', '\n', '#']
-ENCODING_COL = list(string.ascii_lowercase) + list(string.ascii_uppercase) + \
+ENCODING_COL = list(string.ascii_uppercase) + list(string.ascii_lowercase) + \
                list(string.digits) + SUPPORTED_SPECIAL_CHARS
 ENCODING_RANGE = len(ENCODING_COL)
 
 # Data Aggregation
 
 def get_text_from_url(url):
-    """Preliminary method to extract only the relevant article text from a website using
-    the Python-Boilerpipe API (https://github.com/misja/python-boilerpipe)
-
-    The extractor accurately finds a start of the article, but because it omits divs
-    with short text lengths, we must manually get the article (including author) text
+    """Preliminary method to extract only the relevant article text from a website
 
     Alternates:
     https://github.com/goose3/goose3
-
-    Misc. References:
-    https://stackoverflow.com/questions/4576077/python-split-text-on-sentences
+    https://github.com/misja/python-boilerpipe
 
     Failed cases:
-    https://www.bbc.com/sport/football/22787925, ['Alasdair Lamont']
+    - https://www.bbc.com/sport/football/22787925, ['Alasdair Lamont']
+
+    - https://nypost.com/2011/09/19/7-world-trade-center-fully-leased/ (Still gives
+      boilerplate info such as 'View author archive', 'email the author', 'etc')
+    
+    - https://www.nytimes.com/2001/12/20/nyregion/nation-challenged-trade-center-city-had-been-warned-fuel-tank-7-world-trade.html
+      (Gives unnecessary '\n' in title)
+    
+    - https://www.politico.eu/article/monster-at-the-berlaymont-martin-selmayr-european-commission-jean-claude-juncker/
+      (HTTP Error 403: Forbidden)
     """
     start_time = time.time()
     if ".pdf" in url:
@@ -82,18 +85,26 @@ def get_text_from_url(url):
     else:
         try:
             text = markdown.get_content(Webpage(url).markdown)
-            # Keep '#' and '\n' (?)
-            # Clean consecutive newlines into just one (e.g ['\n', '\n', 'a'] --> ['\n', 'a'])
-            # To-do:
-            #   - Clean all elements containing '#' into just '#' (e.g. '####' --> '#')
-            # matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
-            # words_and_pound_newline = [i for i, j in itertools.zip_longest(matched_words, matched_words[1:]) if i!=j]
-            # words_and_pound_newline = [('#' if '#' in x else x) for x in words_and_pound_newline]
+            ### Keeps '#' and '\n'
+            # Cleans consecutive newlines into just one (e.g ['\n', '\n', 'a'] --> ['\n', 'a'])
+            # Cleans all elements containing '#' into just '#' (e.g. '####' --> '#')
+            matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
+            words_and_pound_newline = [i for i, j in itertools.zip_longest(matched_words, matched_words[1:]) if i!=j]
+            words_and_pound_newline = [('#' if '#' in x else x) for x in words_and_pound_newline]
+            words_and_pound_newline = [(x.replace('_', '') if '_' in x else x) for x in words_and_pound_newline]
+            ret = ''
+            for i in range(len(words_and_pound_newline)-1):
+                word = words_and_pound_newline[i]
+                if i == 0 or word == '\n' or (i > 0 and words_and_pound_newline[i-1] == '\n'):
+                    ret += word
+                else:
+                    ret += (" " + word)
+            print("Text scrape successfully finished in {0} seconds: {1}".format(time.time()-start_time, url))
+            return ret
 
-            # Just characters
-            total_words = re.sub("[^\w]", " ", text).split()
-            print(colored("Text scrape successfully finished in {0} seconds".format(time.time() - start_time), "green"))
-            return ' '.join(total_words)
+            ### Just characters
+            # total_words = re.sub("[^\w]", " ", text).split()
+            # return ' '.join(total_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
             print(colored(">>> Error: Reading text in {0} ({1}): {2}".format(func_name, url, e), "red"))
@@ -174,7 +185,6 @@ def aggregate_data(info, num_points=False):
         datapoints = datapoints[:num_points]
     for entry in datapoints:
         url = entry[label_lookup['url']]
-        print(url)
         citation_dict = {x: entry[label_lookup[x]] for x in label_lookup.keys()}
         text = slice_text(get_text_from_url(url))
         if text.strip() != "":
@@ -277,7 +287,7 @@ def one_hot(s):
     mat = [[0 for _ in range(ENCODING_RANGE)] for __ in range(len(s))]
     for i in range(len(s)):
         char = s[i]
-        if not (ord(char) < 127 and ord(char) > 31):
+        if not ord(char) != 10 and (ord(char) < 127 and ord(char) > 31):
             char = clean_to_ascii(char)
         if char not in ENCODING_COL:
             print(colored("Not in one-hot encoding range: {0}".format(char), 'yellow'))
@@ -321,6 +331,12 @@ def slice_text(text, char_len=600):
         text = pad_text(text, char_len)
     return text
 
+def unvectorize_text(vec):
+    ret = ''
+    for row in vec:
+        ret += ENCODING_COL[row.index(1)]
+    return ret
+
 def vectorize_text(text, char_len=600):
     """Given a string of text (already padded, truncated), convert into one hot matrix"""
     if len(text) != char_len:
@@ -345,7 +361,7 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
 if __name__ == '__main__':
     RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
     INFO = get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author', 'date'])
-    NUM_DATA_POINTS = 20
+    NUM_DATA_POINTS = 100
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
     save_data(RESOURCES_PATH + '/savedArticleData.dat', DATA, override_data=True)
 
