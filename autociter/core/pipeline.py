@@ -56,6 +56,7 @@ def get_text_from_url(url):
 
     Failed cases:
     - https://www.bbc.com/sport/football/22787925, ['Alasdair Lamont']
+    - http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=101240', ['William Grosshandler']
 
     - https://nypost.com/2011/09/19/7-world-trade-center-fully-leased/ (Still gives
       boilerplate info such as 'View author archive', 'email the author', 'etc')

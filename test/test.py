@@ -62,7 +62,7 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
                 break
 
         if not pass_case:
-            print(colored("Failed case: {0}".format((url, data_fields)), 'red'))
+            print(colored("Failed case: {0}".format((url, data_fields)), 'cyan', 'on_red'))
 
         success += pass_case
         total += 1
