@@ -15,16 +15,28 @@
 # Author: Michael Wan <m.wan@berkeley.edu>
 """Data pipeline file that extracts and prepares data for analysis"""
 
-import re
+import datetime
+import inspect
+import io
 import json
-import time
 import os
 import os.path
+import re
+import requests
+import string
+import time
+import itertools
 
 from autociter.data.storage import Table
 from boilerpipe.extract import Extractor
+from PyPDF2 import PdfFileReader
+from termcolor import colored
+from dateparser.search import search_dates
+
 import autociter.data.standardize as standardize
 import autociter.data.queries as queries
+from autociter.web.webpages import Webpage
+import autociter.web.markdown as markdown
 
 SUPPORTED_SPECIAL_CHARS = ['-', ':', '.', ' ', '\n', '#']
 ENCODING_COL = list(string.ascii_uppercase) + list(string.ascii_lowercase) + \
