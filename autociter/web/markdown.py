@@ -13,8 +13,6 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-from autociter.web.webpages import Webpage
-
 IGNORED_HEADERS = {"Search", "News", "Home"}
 IGNORED_SUBSTRINGS = {"Image\n\n"}
 

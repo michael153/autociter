@@ -16,7 +16,7 @@
 """Define Crawler objects."""
 from urllib import error
 
-from autociter.web.extractors import ReferenceExtractor1, ReferenceExtractor2, WikipediaArticleExtractor
+from autociter.web.extractors import WikipediaCitationExtractor, WikipediaArticleExtractor
 from autociter.web.webpages import Webpage, WikipediaArticle
 
 
@@ -65,7 +65,11 @@ class WikipediaArticleCrawler(Crawler):
     """Scrapes references from Wikipedia articles."""
 
     def __init__(self):
-        Crawler.__init__(self, ReferenceExtractor1(), ReferenceExtractor2())
+        extractors = [
+            WikipediaCitationExtractor(variant)
+            for variant in WikipediaCitationExtractor.VARIANTS
+        ]
+        Crawler.__init__(self, extractors)
 
     def scrape(self, webpage):
         """Return references found in an article as Reference objects.
@@ -76,7 +80,8 @@ class WikipediaArticleCrawler(Crawler):
         Returns:
             A list of Reference objects.
         """
-        assert isinstance(webpage, WikipediaArticle), "Expected WikipediaArticle object."
+        assert isinstance(webpage,
+                          WikipediaArticle), "Expected WikipediaArticle object."
         return Crawler.scrape(self, webpage.edit)
 
 
@@ -100,5 +105,6 @@ class WikipediaArticleListCrawler(Crawler):
         Returns:
             A list of WikipediaArticle objects.
         """
-        assert isinstance(webpage, WikipediaArticle), "Expected WikipediaArticle object."
+        assert isinstance(webpage,
+                          WikipediaArticle), "Expected WikipediaArticle object."
         return Crawler.scrape(self, webpage)

@@ -25,7 +25,7 @@ def clean(string):
     return html.unescape(string)
 
 
-class WikipediaArticleReference:
+class WikipediaCitation:
     """A Wikipedia article reference."""
 
     ATTRIBUTES = ("title", "first", "last", "first1", "last1", "first2",
@@ -41,7 +41,7 @@ class WikipediaArticleReference:
         """
         self.string, self.data = clean(string), {}
         self.assigner, self.delimiter = "=", "|"
-        for attribute in WikipediaArticleReference.ATTRIBUTES:
+        for attribute in self.ATTRIBUTES:
             self.data[attribute] = self.find(attribute, self.string)
 
     def find(self, attribute, string):
@@ -76,6 +76,6 @@ class WikipediaArticleReference:
     def __csv__(self):
         """Return csv-compatible representation."""
         string = ""
-        for attribute in WikipediaArticleReference.ATTRIBUTES:
+        for attribute in self.ATTRIBUTES:
             string += str(self.data[attribute]) + "\t"
         return string.rstrip()
