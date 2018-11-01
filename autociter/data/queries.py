@@ -16,11 +16,11 @@
 """Define query functions."""
 
 
-def contains(*attributes):
-    """Return true if record contains values for all given attributes."""
+def contains(*fields):
+    """Return true if record contains values for all given fields."""
     def query(record):
-        for attribute in attributes:
-            if not attribute in record:
+        for field in fields:
+            if not field in record:
                 return False
         return True
     return query

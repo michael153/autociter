@@ -43,10 +43,10 @@ def get_text_from_url(url):
     - http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=101240', ['William Grosshandler']
     - https://nypost.com/2011/09/19/7-world-trade-center-fully-leased/ (Still gives
       boilerplate info such as 'View author archive', 'email the author', 'etc')
-    
+
     - https://www.nytimes.com/2001/12/20/nyregion/nation-challenged-trade-center-city-had-been-warned-fuel-tank-7-world-trade.html
       (Gives unnecessary '\n' in title)
-    
+
     - https://www.politico.eu/article/monster-at-the-berlaymont-martin-selmayr-european-commission-jean-claude-juncker/
       (HTTP Error 403: Forbidden)
     """
@@ -109,7 +109,7 @@ def get_wiki_article_links_info(file, args):
     return (data, labels)
 
 def find_attr_substr(text, word, category):
-        """Given a string word and the type of data it is (i.e 'date'), 
+        """Given a string word and the type of data it is (i.e 'date'),
         return the beginning and ending index of the substring within
         text if found, otherwise (-1, -1)
         """
@@ -195,7 +195,7 @@ def save_data(file_name, data, override_data=True):
         file = open(file_name, "w+")
         file.write('{}')
         file.close()
-    
+
     try:
         if override:
             saved_dict = json.load(open(file_name))
@@ -229,7 +229,6 @@ def get_saved_data(file_name):
 
 def clean_to_ascii(c):
     """Converts a non-ASCII character into it's ASCII equivalent
-
         >>> clean_to_ascii('ç')
         'c'
     """
