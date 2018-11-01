@@ -14,7 +14,7 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define function and objects for manipulating data files."""
-from utils import multithreading
+from autociter.utils import multithreading
 
 
 def csv(item):
@@ -87,6 +87,10 @@ class Table:
         return Table(fields=self.fields, records=valid)
 
     def add(self, record):
+        """Add record to the end of this table.
+
+        The fields of the records must match the fields of the table.
+        """
         if not isinstance(record, Record):
             raise TypeError("Expected Record object.")
         if record.fields != self.fields:

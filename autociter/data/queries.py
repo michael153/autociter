@@ -14,8 +14,6 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define query functions."""
-from urllib import request
-from urllib import error
 
 
 def contains(*attributes):

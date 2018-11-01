@@ -102,5 +102,3 @@ class ArticleListCrawler(Crawler):
         """
         assert isinstance(webpage, Article), "Expected Article object."
         return Crawler.scrape(self, webpage)
-
-#TODO: Add WikipediaIndexCrawler

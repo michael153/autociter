@@ -15,7 +15,7 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 import unittest
 
-import test.utils.server as server
+import test.server as server
 from autociter.web.webpages import Webpage
 
 
