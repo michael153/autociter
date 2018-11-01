@@ -14,6 +14,7 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define function and objects for manipulating data files."""
+from utils import multithreading
 
 
 def csv(item):
@@ -50,9 +51,9 @@ class Table:
             lines = file.read().splitlines()
         self.fields = lines[0].split(self.DELIMITER)
         for line in lines[1:]:
-            self.add(parse(line))
+            self.add(self.parse(line))
 
-    def parse(line):
+    def parse(self, line):
         """Parse a line of text that represents a data record."""
         values = line.split(self.DELIMITER)
         return Record(self.fields, values)
@@ -74,7 +75,15 @@ class Table:
 
     def query(self, function):
         """Return a Table containing records that satisfy some function."""
-        valid = [r for r in self.records if function(r)]
+        valid = []
+
+        def validate(*records):
+            for record in records:
+                if function(record):
+                    valid.append(record)
+
+        threads = multithreading.build(6, validate, self.records)
+        multithreading.execute(threads)
         return Table(fields=self.fields, records=valid)
 
     def add(self, record):
@@ -98,6 +107,7 @@ class Record:
     DELIMITER = "\t"
 
     def __init__(self, fields, values):
+        self.fields, self.values = fields, values
         self.data = dict(zip(fields, values))
 
     def __getitem__(self, field):
@@ -119,9 +129,7 @@ class Record:
         return string.rstrip()
 
     def __repr__(self):
-        fields = list(self.data.keys())
-        values = list(self.data.values())
-        return "Record({0}, {1})".format(fields, values)
+        return "Record({0}, {1})".format(self.fields, self.values)
 
     def __str__(self):
         string = ""
