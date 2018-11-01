@@ -15,7 +15,7 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Extractor objects."""
 from autociter.web.webpages import WikipediaArticle
-from autociter.core.references import WikipediaArticleReference
+from autociter.core.citations import WikipediaCitation
 
 
 #pylint: disable=too-few-public-methods
@@ -53,16 +53,18 @@ class Extractor:
         return [r for r in results if self.validate(r)]
 
 
-class ReferenceExtractor1(Extractor):
-    """Extracts references defined in Wikipedia articles.
+class WikipediaCitationExtractor(Extractor):
+    """Extracts citations defined in Wikipedia articles.
 
-    Wikipedia article references are denoted by the opening and closing tags
+    Wikipedia article citations are denoted by the opening and closing tags
     "{{cite" and "}}", respectively. These references can be scraped from
     the edit-page of any Wikipedia article.
     """
 
-    def __init__(self):
-        Extractor.__init__(self, "{{cite", "}}")
+    VARIANTS = ("{{cite", "{{Cite")
+
+    def __init__(self, beg="{{cite"):
+        Extractor.__init__(self, beg, "}}")
 
     def extract(self, string):
         """Return references found in an article as Reference objects.
@@ -70,20 +72,8 @@ class ReferenceExtractor1(Extractor):
         Arguments:
             string: The source code of an edit-article webpage.
         """
-        references = Extractor.extract(self, string)
-        return [WikipediaArticleReference(r) for r in references]
-
-
-class ReferenceExtractor2(ReferenceExtractor1):
-    """Secondary Wikipedia reference extractor.
-
-    Wikipedia article references can altenatively be denoted by the opening tag
-    "{{Cite" rather than the more common "{{cite".
-    """
-
-    def __init__(self):
-        ReferenceExtractor1.__init__(self)
-        self.beg.replace("cite", "Cite")
+        citations = Extractor.extract(self, string)
+        return [WikipediaCitation(c) for c in citations]
 
 
 class WikipediaArticleExtractor(Extractor):
