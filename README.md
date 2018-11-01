@@ -12,6 +12,7 @@ Uses NLP to accurately extract citation information from any online website
 - date-extractor
 - sk-learn
 - html2text
+- utils
 <!-- - datefinder==0.6.1 [(need to manually install zip and change regex==2016.01.10 to regex>=2016.01.10)](https://stackoverflow.com/questions/44016287/error-in-pip-install-datefinder) -->
 
 ## Open-Ended Questions Regarding Implementation / ML Model

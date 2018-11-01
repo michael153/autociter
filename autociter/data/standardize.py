@@ -37,7 +37,7 @@ def std_table(table):
 				values.append(list(set(authors)))
 			else:
 				values.append("")
-		ret.add_record(Record(std_fields, values))
+		ret.add(Record(std_fields, values))
 	return ret
 
 def std_text(text):
@@ -51,5 +51,6 @@ def std_data(data, data_type):
 		return [d.lower().replace('.', '').replace('-', ' ') for d in data]
 	elif data_type == 'date':
 		return data.lower().replace(',', ' ').replace('-', ' ')
+	elif data_type == 'title':
+		return data.title()
 	return data
-
