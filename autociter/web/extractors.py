@@ -14,8 +14,8 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Extractor objects."""
-from autociter.web.webpages import WikipediaWikipediaArticle
-from autociter.core.references import WikipediaWikipediaArticleReference
+from autociter.web.webpages import WikipediaArticle
+from autociter.core.references import WikipediaArticleReference
 
 
 #pylint: disable=too-few-public-methods
