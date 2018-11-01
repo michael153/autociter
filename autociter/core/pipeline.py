@@ -64,7 +64,7 @@ def get_text_from_url(url):
             return ' '.join(scraped_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored("*** Error: Reading pdf in {0} ({1}): {2}".format(func_name, url, e), "red"))
+            print(colored("* Error: Reading pdf in {0} ({1}): {2}".format(func_name, url, e), "red"))
             return ""
     else:
         try:
@@ -75,7 +75,7 @@ def get_text_from_url(url):
             matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
             words_and_pound_newline = [i for i, j in itertools.zip_longest(matched_words, matched_words[1:]) if i!=j]
             words_and_pound_newline = [('#' if '#' in x else x) for x in words_and_pound_newline]
-            words_and_pound_newline = [(x.replace('_', '') if '_' in x else x) for x in words_and_pound_newline]
+            words_and_pound_newline = [(x.replace('', '') if '' in x else x) for x in words_and_pound_newline]
             ret = ''
             for i in range(len(words_and_pound_newline)-1):
                 word = words_and_pound_newline[i]
@@ -91,7 +91,7 @@ def get_text_from_url(url):
             # return ' '.join(total_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored("*** Error: Reading text in {0} ({1}): {2}".format(func_name, url, e), "red"))
+            print(colored("* Error: Reading text in {0} ({1}): {2}".format(func_name, url, e), "red"))
             return ""
 
 def get_wiki_article_links_info(file, args):
@@ -229,6 +229,7 @@ def get_saved_data(file_name):
 
 def clean_to_ascii(c):
     """Converts a non-ASCII character into it's ASCII equivalent
+
         >>> clean_to_ascii('ç')
         'c'
     """
@@ -336,8 +337,8 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
     return mat
 
 # Data aggregation
-if __name__ == '__main__':
-    RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
+if _name_ == '_main_':
+    RESOURCES_PATH = os.path.dirname(os.path.realpath(_file_)) + '/../../resources'
     INFO = get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author', 'date'])
     NUM_DATA_POINTS = 100
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
