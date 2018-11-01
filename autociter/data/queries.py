@@ -27,15 +27,6 @@ def contains(*attributes):
         return True
     return query
 
-#TODO: Try change module for this to improve efficiency
-def valid_url(record):
-    """Return true if the record url attribute is openable."""
-    try:
-        request.urlopen(record["url"])
-        return True
-    except (error.HTTPError, error.URLError, WindowsError, ValueError):
-        return False
-
 
 def either(query1, query2):
     """Return true if record satisfies either query1 or query2."""
@@ -43,10 +34,16 @@ def either(query1, query2):
         return query1(record) or query2(record)
     return query
 
+
 def both(query1, query2):
     """Return true if record satisfies both query1 and query2."""
     def query(record):
         return query1(record) and query2(record)
     return query
 
-#TODO: add negate query
+
+def negate(query1):
+    """Return true if record does NOT satisfy query1."""
+    def query(record):
+        return not query1(record)
+    return query

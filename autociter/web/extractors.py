@@ -15,12 +15,12 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Extractor objects."""
 from autociter.web.webpages import Article
-from autociter.web.references import ArticleReference
+from autociter.citation.references import ArticleReference
 
 
 #pylint: disable=too-few-public-methods
 class Extractor:
-    """An object that assists with data exctraction.
+    """An object that assists with data extraction.
 
     Extractor and its subclasses contain an extract method. The extract method
     takes a string and extracts substrings that are exclusively enclosed by
@@ -123,3 +123,49 @@ class ArticleExtractor(Extractor):
         """
         titles = Extractor.extract(self, string)
         return [Article("https://en.wikipedia.org/wiki/" + t) for t in titles]
+
+
+class MarkdownContentExtractor(Extractor):
+
+    IGNORED_HEADERS = {"Search", "News", "Home"}
+    IGNORED_SUBSTRINGS = {"Image\n\n"}
+
+    # Override default init
+    def __init__(self):
+        pass
+
+    def extract(self, markdown):
+        start = _find_title(markdown)
+        content = string[markdown:]
+        return _clean(content)
+
+    def _find_title(markdown):
+        for heading_size in range(1, 7):
+            search_start = 0
+            while _contains_heading(markdown, heading_size, search_start):
+                heading_start = _find_heading(markdown, heading_size, search_start)
+                heading_text = _get_heading_text(markdown, heading_start)
+                if heading_text not in IGNORED_HEADERS:
+                    return heading_start
+                search_start = heading_start + len(heading_text)
+        return -1
+
+    def _contains_heading(markdown, size=1, start=0):
+        return find_heading(markdown, size, start) != -1
+
+    def _find_heading(markdown, size=1, start=0):
+        for index in range(start, len(markdown)):
+            desired = "\n" + "#" * size + " "
+            if markdown[index:index + len(desired)] == desired:
+                return index + len("\n")
+        return -1
+
+    def _get_heading_text(markdown, heading_start=0):
+        whitespace_index = markdown.find(" ", heading_start)
+        newline_index = markdown.find("\n", whitespace_index)
+        return markdown[whitespace_index + 1:newline_index]
+
+    def _clean(content):
+        for substring in IGNORED_SUBSTRINGS:
+            content = content.replace(substring, "")
+        return content
