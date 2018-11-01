@@ -43,10 +43,10 @@ def get_text_from_url(url):
     - http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=101240', ['William Grosshandler']
     - https://nypost.com/2011/09/19/7-world-trade-center-fully-leased/ (Still gives
       boilerplate info such as 'View author archive', 'email the author', 'etc')
-
+    
     - https://www.nytimes.com/2001/12/20/nyregion/nation-challenged-trade-center-city-had-been-warned-fuel-tank-7-world-trade.html
       (Gives unnecessary '\n' in title)
-
+    
     - https://www.politico.eu/article/monster-at-the-berlaymont-martin-selmayr-european-commission-jean-claude-juncker/
       (HTTP Error 403: Forbidden)
     """
@@ -64,7 +64,7 @@ def get_text_from_url(url):
             return ' '.join(scraped_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored("* Error: Reading pdf in {0} ({1}): {2}".format(func_name, url, e), "red"))
+            print(colored("*** Error: Reading pdf in {0} ({1}): {2}".format(func_name, url, e), "red"))
             return ""
     else:
         try:
@@ -75,7 +75,7 @@ def get_text_from_url(url):
             matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
             words_and_pound_newline = [i for i, j in itertools.zip_longest(matched_words, matched_words[1:]) if i!=j]
             words_and_pound_newline = [('#' if '#' in x else x) for x in words_and_pound_newline]
-            words_and_pound_newline = [(x.replace('', '') if '' in x else x) for x in words_and_pound_newline]
+            words_and_pound_newline = [(x.replace('_', '') if '_' in x else x) for x in words_and_pound_newline]
             ret = ''
             for i in range(len(words_and_pound_newline)-1):
                 word = words_and_pound_newline[i]
@@ -91,7 +91,7 @@ def get_text_from_url(url):
             # return ' '.join(total_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored("* Error: Reading text in {0} ({1}): {2}".format(func_name, url, e), "red"))
+            print(colored("*** Error: Reading text in {0} ({1}): {2}".format(func_name, url, e), "red"))
             return ""
 
 def get_wiki_article_links_info(file, args):
@@ -109,7 +109,7 @@ def get_wiki_article_links_info(file, args):
     return (data, labels)
 
 def find_attr_substr(text, word, category):
-        """Given a string word and the type of data it is (i.e 'date'),
+        """Given a string word and the type of data it is (i.e 'date'), 
         return the beginning and ending index of the substring within
         text if found, otherwise (-1, -1)
         """
@@ -195,7 +195,7 @@ def save_data(file_name, data, override_data=True):
         file = open(file_name, "w+")
         file.write('{}')
         file.close()
-
+    
     try:
         if override:
             saved_dict = json.load(open(file_name))
@@ -337,8 +337,8 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
     return mat
 
 # Data aggregation
-if _name_ == '_main_':
-    RESOURCES_PATH = os.path.dirname(os.path.realpath(_file_)) + '/../../resources'
+if __name__ == '__main__':
+    RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
     INFO = get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author', 'date'])
     NUM_DATA_POINTS = 100
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
