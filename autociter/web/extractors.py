@@ -70,8 +70,8 @@ class ReferenceExtractor1(Extractor):
         Arguments:
             string: The source code of an edit-article webpage.
         """
-        references_raw = Extractor.extract(self, string)
-        return [ArticleReference(r) for r in references_raw]
+        references = Extractor.extract(self, string)
+        return [ArticleReference(r) for r in references]
 
 
 class ReferenceExtractor2(ReferenceExtractor1):
@@ -104,7 +104,7 @@ class ArticleExtractor(Extractor):
         Extractor.__init__(self, "<a href=\"/wiki/", "\"")
 
         def validate(result):
-            for prefix in ArticleExtractor.IGNORED_NAMESPACES:
+            for prefix in self.IGNORED_NAMESPACES:
                 if prefix in result:
                     return False
             return True
