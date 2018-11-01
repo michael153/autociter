@@ -35,7 +35,7 @@ import autociter.core.pipeline as pipeline
 
 RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
 
-class EarlyStoppingByLossVal(Callback):
+class early_stop_by_loss_val(Callback):
     def __init__(self, monitor='val_loss', value=0.000005, verbose=0):
         super(Callback, self).__init__()
         self.monitor = monitor
@@ -110,7 +110,7 @@ def train(num, max_epoch = 50, nfolds = 10, batch_size = 128):
     print(X.shape)
 
     callbacks = [
-        EarlyStoppingByLossVal(monitor='val_loss', value=0.00001, verbose=1),
+        early_stop_by_loss_val(monitor='val_loss', value=0.00001, verbose=1),
     ]
 
     best_m_auc = 0.0

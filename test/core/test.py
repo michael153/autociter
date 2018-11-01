@@ -40,6 +40,7 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
 
     datapoints = info[0][:num_points] if num_points else info[0]
     success, total, scrape_failure = 0, 0, 0
+    failed_urls = []
 
     for entry in datapoints:
         url = entry[info[1]['url']]
@@ -63,17 +64,20 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
 
         if not pass_case:
             print(colored("*** Error: Failed case: {0}".format((url, data_fields)), 'cyan', 'on_red'))
+            failed_urls.append(url)
 
         success += pass_case
         total += 1
-    return (success, total, scrape_failure)
+    return (success, total, scrape_failure, failed_urls)
 
-RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../resources'
+RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
 INFO = pipeline.get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author'])
-NUM_DATA_POINTS = 40
+NUM_DATA_POINTS = 20
 RES = find_attr_in_scraped_article(INFO, ['author'], NUM_DATA_POINTS)
 
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(RES[0],
                                                                      RES[1],
                                                                      RES[2],
                                                                      (100.0*RES[0])/RES[1]))
+
+print(colored("\n\nFailed Urls:\n{0}".format('\n'.join(RES[3])), "red"))
