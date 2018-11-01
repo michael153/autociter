@@ -18,7 +18,7 @@ import unittest
 from autociter.data.storage import Table, Record
 
 
-class ArticleTest(unittest.TestCase):
+class WikipediaArticleTest(unittest.TestCase):
 
     def testGetItem(self):
         pass

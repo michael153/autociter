@@ -15,24 +15,24 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 import unittest
 
-from autociter.web.webpages import Article, Webpage
+from autociter.web.webpages import WikipediaArticle, Webpage
 
 
-class ArticleTest(unittest.TestCase):
+class WikipediaArticleTest(unittest.TestCase):
 
     def testTitle(self):
-        a = Article("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
         self.assertEqual("Chetro_Ketl", a.title)
 
     def testEditPage(self):
-        a = Article("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
         e = Webpage("https://en.wikipedia.org/w/index.php?title=Chetro_Ketl&action=edit")
         self.assertEqual(e, a.edit_page)
 
     def testRepr(self):
-        a = Article("https://en.wikipedia.org/wiki/Chetro_Ketl")
-        self.assertEqual("Article('https://en.wikipedia.org/wiki/Chetro_Ketl')", repr(a))
+        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        self.assertEqual("WikipediaArticle('https://en.wikipedia.org/wiki/Chetro_Ketl')", repr(a))
 
     def testStr(self):
-        a = Article("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
         self.assertEqual("Chetro_Ketl", str(a))

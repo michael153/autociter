@@ -14,8 +14,8 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Extractor objects."""
-from autociter.web.webpages import Article
-from autociter.core.references import ArticleReference
+from autociter.web.webpages import WikipediaWikipediaArticle
+from autociter.core.references import WikipediaWikipediaArticleReference
 
 
 #pylint: disable=too-few-public-methods
@@ -71,7 +71,7 @@ class ReferenceExtractor1(Extractor):
             string: The source code of an edit-article webpage.
         """
         references = Extractor.extract(self, string)
-        return [ArticleReference(r) for r in references]
+        return [WikipediaArticleReference(r) for r in references]
 
 
 class ReferenceExtractor2(ReferenceExtractor1):
@@ -86,7 +86,7 @@ class ReferenceExtractor2(ReferenceExtractor1):
         self.beg.replace("cite", "Cite")
 
 
-class ArticleExtractor(Extractor):
+class WikipediaArticleExtractor(Extractor):
     """Extracts Wikipedia articles."""
 
     # Special article types
@@ -113,10 +113,10 @@ class ArticleExtractor(Extractor):
         self.validate = validate
 
     def extract(self, string):
-        """Return articles found in a article as Article objects.
+        """Return articles found in a article as WikipediaArticle objects.
 
         The extract method searches an article's source code for references to
-        other Wikipedia articles and returns them as Article objects. Special
+        other Wikipedia articles and returns them as WikipediaArticle objects. Special
         articles (e.g. Wikipedia help articles) are excluded.
 
         Arguments:
@@ -124,4 +124,4 @@ class ArticleExtractor(Extractor):
                     of other articles (e.g. the "featured articles" article.)
         """
         titles = Extractor.extract(self, string)
-        return [Article("https://en.wikipedia.org/wiki/" + t) for t in titles]
+        return [WikipediaArticle("https://en.wikipedia.org/wiki/" + t) for t in titles]

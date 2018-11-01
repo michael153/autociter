@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Define Webpage and Article objects."""
+"""Define Webpage and WikipediaArticle objects."""
 from urllib import request
 import html2text
 
@@ -51,7 +51,7 @@ class Webpage:
         return parser.handle(self.source).rstrip()
 
 
-class Article(Webpage):
+class WikipediaArticle(Webpage):
     """A Wikipedia article.
 
     Each article has a corresponding page where users can edit the content of
@@ -66,7 +66,7 @@ class Article(Webpage):
         self.edit_page = Webpage(edit_url)
 
     def __repr__(self):
-        return "Article('{0}')".format(self.url)
+        return "WikipediaArticle('{0}')".format(self.url)
 
     def __str__(self):
         return self.title

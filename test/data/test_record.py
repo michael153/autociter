@@ -18,7 +18,7 @@ import unittest
 from autociter.data.storage import Record
 
 
-class ArticleTest(unittest.TestCase):
+class WikipediaArticleTest(unittest.TestCase):
 
     def testGetItem(self):
         r = Record(["title", "author"], ["Painting", "Bob Ross"])
