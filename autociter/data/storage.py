@@ -17,7 +17,6 @@
 from autociter.utils import multithreading
 
 
-
 def csv(item, delimiter):
     """Return the csv-valid representation of an object."""
     return type(item).__csv__(item, delimiter)
@@ -28,7 +27,7 @@ class Table:
 
     DELIMITER = "\t"
 
-    def __init__(self, filename=None, fields=(), records=()):
+    def __init__(self, filename=None, fields=()):
         """Initialize a data table.
 
         Arguments:
@@ -36,15 +35,13 @@ class Table:
             records: A list of Record objects.
             filename: The name of a data sheet.
         """
-        self.records = []
+        self.dictionary = {}
         if filename:
             self.load(filename)
         else:
             if not fields:
                 raise ValueError("Expected at least one field.")
             self.fields = fields
-            for record in records:
-                self.add(record)
 
     def load(self, filename):
         """Load data from a file."""
@@ -74,6 +71,10 @@ class Table:
             header += field + self.DELIMITER
         return header.rstrip()
 
+    @property
+    def records(self):
+        return list(self.dictionary.values())
+
     def query(self, function):
         """Return a Table containing records that satisfy some function."""
         valid = []
@@ -83,26 +84,54 @@ class Table:
                 if function(record):
                     valid.append(record)
 
+        # Run the query with six seperate threads
         threads = multithreading.build(6, validate, self.records)
         multithreading.execute(threads)
-        return Table(fields=self.fields, records=valid)
 
-    def add(self, record):
+        result = Table(fields=self.fields)
+        for record in valid:
+            result.add(record)
+        return result
+
+    def add(self, record, key=None):
         """Add record to the end of this table.
 
         The fields of the records must match the fields of the table.
+
+        Arguments:
+            record: A Record object with the same fields as this table
+            key: The desired key for the record (optional)
         """
         if not isinstance(record, Record):
             raise TypeError("Expected Record object.")
         if record.fields != self.fields:
             raise ValueError("Table and record fields are mismatched.")
-        self.records.append(record)
+        if key in self.dictionary:
+            raise ValueError("A record with that key already exists.")
+        key = key or len(self.records)
+        self.dictionary[key] = record
+
+    def __contains__(self, record):
+        for r in self.records.values():
+            if record == r:
+                return True
+        return False
 
     def __getitem__(self, key):
-        return self.records[key]
+        if key not in self.dictionary:
+            raise KeyError("Table has no record with key " + str(key))
+        return self.dictionary[key]
 
     def __len__(self):
         return len(self.records)
+
+    def __iter__(self):
+        return iter(self.records)
+
+    def __eq__(self, other):
+        if not isinstance(other, Table):
+            return False
+        return self.dictionary == other.dictionary
 
 
 class Record:
@@ -111,6 +140,12 @@ class Record:
     LABEL_SIZE = 5
 
     def __init__(self, fields, values):
+        """Initialize a record.
+
+        Arguments:
+            fields: A list representing the record's attributes.
+            values: A list representing the value of each attribute.
+        """
         self.fields, self.values = fields, values
         self.data = dict(zip(fields, values))
 
@@ -123,7 +158,9 @@ class Record:
     def __eq__(self, other):
         if not isinstance(other, Record):
             return False
-        return self.data == other.data
+        if not self.fields == other.fields:
+            return False
+        return self.values == other.values
 
     def __csv__(self, delimiter):
         """Return csv-compatible representation."""

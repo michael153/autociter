@@ -20,7 +20,7 @@ from autociter.web.extractors import WikipediaCitationExtractor, WikipediaArticl
 from autociter.web.webpages import Webpage, WikipediaArticle
 
 
-#pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods
 class Crawler:
     """Scrapes information from webpages.
 

@@ -13,11 +13,13 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
+"""Test methods of the Article object defined in web.webpages."""
 import unittest
 
 from autociter.web.webpages import WikipediaArticle, Webpage
 
 
+# pylint: disable=invalid-name, missing-docstring
 class WikipediaArticleTest(unittest.TestCase):
 
     def testTitle(self):

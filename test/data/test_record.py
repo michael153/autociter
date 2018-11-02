@@ -13,11 +13,13 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
+"""Test methods of the Record object defined in data.storage."""
 import unittest
 
 from autociter.data.storage import Record
 
 
+# pylint: disable=invalid-name, missing-docstring
 class WikipediaArticleTest(unittest.TestCase):
 
     def testGetItem(self):

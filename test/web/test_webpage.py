@@ -13,13 +13,16 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
+"""Test methods of the Webpage object defined in web.webpages."""
 import unittest
 
-from autociter.web.webpages import Webpage
 from test import server
 import assets
 
+from autociter.web.webpages import Webpage
 
+
+# pylint: disable=invalid-name, missing-docstring
 class WebpageTest(unittest.TestCase):
 
     @classmethod
@@ -27,11 +30,11 @@ class WebpageTest(unittest.TestCase):
         server.start()
 
     def setUp(self):
-        self.url = server.address + "/simple_webpage.html"
+        self.url = server.ADDRESS + "/simple_webpage.html"
 
     def testUrl(self):
         w = Webpage(self.url)
-        self.assertEqual(self.url, w.url)
+        self.assertEqual(w.url, self.url)
 
     def testRepr(self):
         w = Webpage(self.url)

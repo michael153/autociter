@@ -18,7 +18,7 @@ from autociter.web.webpages import WikipediaArticle
 from autociter.core.citations import WikipediaCitation
 
 
-#pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods
 class Extractor:
     """An object that assists with data extraction.
 

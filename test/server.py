@@ -13,6 +13,7 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
+"""Define functions for running a mock website."""
 import http.server
 import socketserver
 import threading
@@ -21,37 +22,41 @@ import os
 import assets
 
 HOST, PORT = "localhost", 8000
+ADDRESS = "http://" + HOST + ":" + str(PORT)
 
-server = None
-address = "http://" + HOST + ":" + str(PORT)
 # Relocate to the directory with mock html files
 os.chdir(assets.path + "/test")
+server = None # pylint: disable=invalid-name
 
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
+    """Custom request handler does NOT print to the console."""
 
-	# Disable output from handler
-	def log_message(self, format, *args):
-		return ""
+    # Disable output from handler
+    def log_message(self, format, *args): # pylint: disable=redefined-builtin
+        return ""
 
 
 class CustomServer(socketserver.TCPServer):
+    """Custom TCP server that is less prone to errors."""
 
-	# Allow address reuse to prevent errors
-	allow_reuse_address = True
+    # Allow address reuse to prevent errors
+    allow_reuse_address = True
 
 
 def start():
-	global server
-	if not server:
-		server = CustomServer((HOST, PORT), CustomHandler)
-		server_thread = threading.Thread(target=server.serve_forever)
-		server_thread.start()
+    """Start the mock website."""
+    global server # pylint: disable=invalid-name, global-statement,
+    if not server:
+        server = CustomServer((HOST, PORT), CustomHandler)
+        server_thread = threading.Thread(target=server.serve_forever)
+        server_thread.start()
 
 
 def end():
-	global server
-	if server:
-		server.shutdown()
-		server.server_close()
-		server = None
+    """Shutdown the mock website and clean up."""
+    global server # pylint: disable=invalid-name, global-statement
+    if server:
+        server.shutdown()
+        server.server_close()
+        server = None
