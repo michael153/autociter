@@ -22,7 +22,7 @@ from autociter.data.storage import Table, Record
 import assets
 
 
-# pylint: disable=invalid-name, missing-docstring
+# pylint: disable=too-many-public-methods, invalid-name, missing-docstring,
 class TableTest(unittest.TestCase):
 
     def setUp(self):
@@ -67,7 +67,7 @@ class TableTest(unittest.TestCase):
         table = Table(fields=["name", "number"])
         self.assertEqual(table.header, "name\tnumber")
 
-    def testQuery_correctLength(self):
+    def testQuery(self):
         table = Table(self.filename)
 
         def in_math(record):
@@ -81,6 +81,12 @@ class TableTest(unittest.TestCase):
         backup = Table(self.filename)
         table.query(lambda record: False)
         self.assertEqual(table, backup)
+
+    def testGetItem(self):
+        table = Table(fields=["player", "power level"])
+        record = Record(table.fields, ["Rafael Nadal", 9001])
+        table.add(record)
+        self.assertEqual(table[0], record)
 
     def testAdd_customKey(self):
         table = Table(fields=["flavor", "rating"])
@@ -107,12 +113,6 @@ class TableTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             table.add(record2, 0)
 
-    def testGetItem(self):
-        table = Table(fields=["player", "power level"])
-        record = Record(table.fields, ["Rafael Nadal", 9001])
-        table.add(record)
-        self.assertEqual(table[0], record)
-
     def testGetItem_invalidKey(self):
         table = Table(fields=["name", "number"])
         with self.assertRaises(KeyError):
@@ -123,6 +123,14 @@ class TableTest(unittest.TestCase):
         record = Record(table.fields, ["Rafael Nadal", 9001])
         table.add(record, "Mallorca")
         self.assertEqual(table["Mallorca"], record)
+
+    def testContains(self):
+        table = Table(fields=["name", "GPA"])
+        record1 = Record(table.fields, ["Bryson Bauer", 3.34])
+        record2 = Record(table.fields, ["Ian Fumusa", 2.27])
+        for record in [record1, record2]:
+            table.add(record)
+        self.assertTrue(record1 in table)
 
     def testLen(self):
         table = Table(self.filename)

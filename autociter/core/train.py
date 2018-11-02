@@ -74,20 +74,20 @@ def build_model(input_length=68, output_dim=600):
     model.add(Dense(300, activation='sigmoid', kernel_initializer='uniform'))
     model.add(Dense(150, activation='sigmoid', kernel_initializer='uniform'))
     model.add(Dense(300, activation='sigmoid', kernel_initializer='uniform'))
-   
+
     model.add(
         Dense(
             output_dim=output_dim,
             activation='softmax',
             kernel_initializer='uniform'))
-   
+
     start = time.time()
-   
+
     model.compile(
         loss='categorical_crossentropy',
         optimizer='rmsprop',
         metrics=['accuracy'])
-   
+
     print("Model Compilation Time: ", time.time() - start)
     model.summary()
     print("Inputs: {0}".format(model.input_shape))
@@ -161,7 +161,7 @@ def train(num, max_epoch=50, nfolds=10, batch_size=128):
                 nb_epoch=1,
                 validation_split=0.05,
                 callbacks=callbacks)
-            
+
             t_probs = model.predict_proba(x_holdout)
             t_auc = sklearn.metrics.roc_auc_score(y_holdout, t_probs)
             print('Epoch %d: auc = %f (best=%f)' % (epoch, t_auc, best_auc))

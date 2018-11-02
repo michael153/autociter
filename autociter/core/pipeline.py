@@ -129,7 +129,8 @@ def get_wiki_article_links_info(file, args):
 
     print("Reading Wikipedia Article Links from...", file)
 
-    table = standardization.std_table(Table(file)).query(queries.contains(*args))
+    table = standardization.std_table(Table(file)).query(
+        queries.contains(*args))
     data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
