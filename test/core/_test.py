@@ -21,7 +21,7 @@ import inspect
 from termcolor import colored
 from dateparser.search import search_dates
 
-import autociter.data.standardize as standardize
+import autociter.data.standardization as standardization
 import autociter.core.pipeline as pipeline
 
 
@@ -74,13 +74,13 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
     for entry in datapoints:
         url = entry[info[1]['url']]
         data_fields = [entry[info[1][attr]] for attr in attributes]
-        text = standardize.std_text(pipeline.get_text_from_url(url))
+        text = standardization.std_text(pipeline.get_text_from_url(url))
         if text == "":
             scrape_failure += 1
             continue
 
         std_fields = [
-            (standardize.std_data(f, a), a) for f, a in zip(data_fields, attributes)
+            (standardization.std_data(f, a), a) for f, a in zip(data_fields, attributes)
         ]
         pass_case = True
 

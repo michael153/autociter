@@ -31,7 +31,7 @@ from PyPDF2 import PdfFileReader
 from termcolor import colored
 from dateparser.search import search_dates
 
-import autociter.data.standardize as standardize
+import autociter.data.standardization as standardization
 import autociter.data.queries as queries
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
@@ -129,7 +129,7 @@ def get_wiki_article_links_info(file, args):
 
     print("Reading Wikipedia Article Links from...", file)
 
-    table = standardize.std_table(Table(file)).query(queries.contains(*args))
+    table = standardization.std_table(Table(file)).query(queries.contains(*args))
     data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
@@ -171,10 +171,10 @@ def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
 
     location_dict = {}
-    std_text = standardize.std_text(text)
+    std_text = # pylint.std_text(text)
     for key, val in citation_dict.items():
         if val:
-            data_field = standardize.std_data(val, key)
+            data_field = standardization.std_data(val, key)
             if isinstance(data_field, list):
                 pos = [
                     find_attr_substr(std_text, d_, key)
@@ -283,7 +283,7 @@ def one_hot(s):
     for i in range(len(s)):
         char = s[i]
         if ord(char) != 10 and not (ord(char) < 127 and ord(char) > 31):
-            char = standardize.clean_to_ascii(char)
+            char = standardization.clean_to_ascii(char)
         if char not in ENCODING_COL:
             print(
                 colored("Not in one-hot encoding range: {0}".format(char),
