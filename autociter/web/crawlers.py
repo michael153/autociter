@@ -46,7 +46,7 @@ class Crawler:
         assert isinstance(webpage, Webpage), "Expected Webpage object."
         try:
             return self._scrape(webpage)
-        except (error.HTTPError, error.URLError, WindowsError):
+        except (error.HTTPError, error.URLError, OSError):
             return []
 
     def _scrape(self, webpage):
