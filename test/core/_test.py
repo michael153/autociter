@@ -79,19 +79,20 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
             scrape_failure += 1
             continue
 
-        std_fields = [
-            (standardization.std_data(f, a), a) for f, a in zip(data_fields, attributes)
-        ]
+        std_fields = [(standardization.std_data(f, a), a)
+                      for f, a in zip(data_fields, attributes)]
         pass_case = True
 
         for field, attribute in std_fields:
             if isinstance(field, list):
                 for i in field:
-                    pass_case = pass_case and (find_attr_substr(text, i, attribute) != (-1, -1))
+                    pass_case = pass_case and (find_attr_substr(
+                        text, i, attribute) != (-1, -1))
                     if not pass_case:
                         break
             else:
-                pass_case = pass_case and (find_attr_substr(text, field, attribute) != (-1, -1))
+                pass_case = pass_case and (find_attr_substr(
+                    text, field, attribute) != (-1, -1))
             if not pass_case:
                 break
 

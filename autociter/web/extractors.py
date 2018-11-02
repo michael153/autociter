@@ -114,4 +114,7 @@ class WikipediaArticleExtractor(Extractor):
                     of other articles (e.g. the "featured articles" article.)
         """
         titles = Extractor.extract(self, string)
-        return [WikipediaArticle("https://en.wikipedia.org/wiki/" + t) for t in titles]
+        return [
+            WikipediaArticle("https://en.wikipedia.org/wiki/" + t)
+            for t in titles
+        ]

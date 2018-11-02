@@ -19,6 +19,7 @@ located within a text"""
 from autociter.data.storage import Table, Record
 import autociter.data.queries as queries
 
+
 def std_table(table):
     """Standardizes a default Table object so that it can be processed by
     pipeline. (i.e Author field is created from first, last, first1, last1, etc.)
@@ -26,7 +27,8 @@ def std_table(table):
     std_fields = ["title", "author", "publisher", "date", "url", "archive-url"]
     ret = Table(fields=std_fields)
     for rec in table.records:
-        author_fields = [("first", "last"), ("first1", "last1"), ("first2", "last2")]
+        author_fields = [("first", "last"), ("first1", "last1"),
+                         ("first2", "last2")]
         authors = []
         for i in author_fields:
             author = (rec[i[0]] + " " + rec[i[1]]).strip()
@@ -43,9 +45,11 @@ def std_table(table):
         ret.add(Record(std_fields, values))
     return ret
 
+
 def std_text(text):
     """Standardizes a string representing article text"""
     return text.lower()
+
 
 def std_data(data, data_type):
     """Standardized text formatting so that words and fields can be properly
@@ -58,6 +62,7 @@ def std_data(data, data_type):
     elif data_type == 'title':
         return data.title()
     return data
+
 
 def clean_to_ascii(foreign_char):
     """Converts a non-ASCII character into it's ASCII equivalent

@@ -26,14 +26,14 @@ ADDRESS = "http://" + HOST + ":" + str(PORT)
 
 # Relocate to the directory with mock html files
 os.chdir(assets.path + "/test")
-server = None # pylint: disable=invalid-name
+server = None  # pylint: disable=invalid-name
 
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
     """Custom request handler does NOT print to the console."""
 
     # Disable output from handler
-    def log_message(self, format, *args): # pylint: disable=redefined-builtin
+    def log_message(self, format, *args):  # pylint: disable=redefined-builtin
         return ""
 
 
@@ -46,7 +46,7 @@ class CustomServer(socketserver.TCPServer):
 
 def start():
     """Start the mock website."""
-    global server # pylint: disable=invalid-name, global-statement,
+    global server  # pylint: disable=invalid-name, global-statement,
     if not server:
         server = CustomServer((HOST, PORT), CustomHandler)
         server_thread = threading.Thread(target=server.serve_forever)
@@ -55,7 +55,7 @@ def start():
 
 def end():
     """Shutdown the mock website and clean up."""
-    global server # pylint: disable=invalid-name, global-statement
+    global server  # pylint: disable=invalid-name, global-statement
     if server:
         server.shutdown()
         server.server_close()

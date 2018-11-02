@@ -116,7 +116,7 @@ class TableTest(unittest.TestCase):
     def testGetItem_invalidKey(self):
         table = Table(fields=["name", "number"])
         with self.assertRaises(KeyError):
-            table[27345] # pylint: disable=pointless-statement
+            table[27345]  # pylint: disable=pointless-statement
 
     def testGetItem_customKey(self):
         table = Table(fields=["player", "power level"])

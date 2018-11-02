@@ -18,30 +18,38 @@
 
 def contains(*fields):
     """Return true if record contains values for all given fields."""
+
     def query(record):
         for field in fields:
             if not field in record:
                 return False
         return True
+
     return query
 
 
 def either(query1, query2):
     """Return true if record satisfies either query1 or query2."""
+
     def query(record):
         return query1(record) or query2(record)
+
     return query
 
 
 def both(query1, query2):
     """Return true if record satisfies both query1 and query2."""
+
     def query(record):
         return query1(record) and query2(record)
+
     return query
 
 
 def negate(query1):
     """Return true if record does NOT satisfy query1."""
+
     def query(record):
         return not query1(record)
+
     return query

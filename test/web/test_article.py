@@ -28,12 +28,16 @@ class WikipediaArticleTest(unittest.TestCase):
 
     def testEditPage(self):
         a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
-        e = Webpage("https://en.wikipedia.org/w/index.php?title=Chetro_Ketl&action=edit")
+        e = Webpage(
+            "https://en.wikipedia.org/w/index.php?title=Chetro_Ketl&action=edit"
+        )
         self.assertEqual(e, a.edit_page)
 
     def testRepr(self):
         a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
-        self.assertEqual("WikipediaArticle('https://en.wikipedia.org/wiki/Chetro_Ketl')", repr(a))
+        self.assertEqual(
+            "WikipediaArticle('https://en.wikipedia.org/wiki/Chetro_Ketl')",
+            repr(a))
 
     def testStr(self):
         a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
