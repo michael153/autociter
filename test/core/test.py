@@ -28,18 +28,20 @@ def find_attr_in_text(article_text, single_field):
     """
     return single_field in article_text
 
+
 def find_attr_in_scraped_article(info, attributes, num_points=False):
     """For a list of url, author pairs, find the success rate of scraping the url and
     finding the authors within the text
     """
 
     if num_points:
-        print("Testing {0} datapoints... 'find_attr_in_scraped_article'\n\n".format(num_points))
+        print("Testing {0} datapoints... 'find_attr_in_scraped_article'\n\n".
+              format(num_points))
     else:
         print("Testing datapoints... 'find_attr_in_scraped_article'\n\n")
 
     datapoints = info[0][:num_points] if num_points else info[0]
-    success, total, scrape_failure = 0, 0, 0
+    total, scrape_failure = 0, 0
     failed_urls = []
 
     for entry in datapoints:
@@ -50,7 +52,9 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
             scrape_failure += 1
             continue
 
-        std_fields = [standardize.std_data(f, a) for f, a in zip(data_fields, attributes)]
+        std_fields = [
+            standardize.std_data(f, a) for f, a in zip(data_fields, attributes)
+        ]
         pass_case = True
 
         for field in std_fields:
@@ -63,21 +67,23 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
                 break
 
         if not pass_case:
-            print(colored("*** Error: Failed case: {0}".format((url, data_fields)), 'cyan', 'on_red'))
+            print(
+                colored(
+                    "*** Error: Failed case: {0}".format((url, data_fields)),
+                    'cyan', 'on_red'))
             failed_urls.append(url)
 
-        success += pass_case
         total += 1
-    return (success, total, scrape_failure, failed_urls)
+    return (total - len(failed_urls), total, scrape_failure, failed_urls)
+
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
-INFO = pipeline.get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv', ['url', 'author'])
+INFO = pipeline.get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv',
+                                            ['url', 'author'])
 NUM_DATA_POINTS = 20
 RES = find_attr_in_scraped_article(INFO, ['author'], NUM_DATA_POINTS)
 
-print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(RES[0],
-                                                                     RES[1],
-                                                                     RES[2],
-                                                                     (100.0*RES[0])/RES[1]))
+print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(
+    RES[0], RES[1], RES[2], (100.0 * RES[0]) / RES[1]))
 
 print(colored("\n\nFailed Urls:\n{0}".format('\n'.join(RES[3])), "red"))

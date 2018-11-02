@@ -20,42 +20,46 @@ from autociter.data.storage import Table, Record
 import autociter.data.queries as queries
 
 def std_table(table):
-	std_fields = ["title", "author", "publisher", "date", "url", "archive-url"]
-	ret = Table(fields=std_fields)
-	for rec in table.records:
-		author_fields = [("first", "last"), ("first1", "last1"), ("first2", "last2")]
-		authors = []
-		for i in author_fields:
-			author = (rec[i[0]] + " " + rec[i[1]]).strip()
-			if author != "":
-				authors.append(author)
-		values = []
-		for attr in std_fields:
-			if queries.contains(attr)(rec):
-				values.append(rec[attr])
-			elif attr == 'author':
-				values.append(list(set(authors)))
-			else:
-				values.append("")
-		ret.add(Record(std_fields, values))
-	return ret
+    """Standardizes a default Table object so that it can be processed by
+    pipeline. (i.e Author field is created from first, last, first1, last1, etc.)
+    """
+    std_fields = ["title", "author", "publisher", "date", "url", "archive-url"]
+    ret = Table(fields=std_fields)
+    for rec in table.records:
+        author_fields = [("first", "last"), ("first1", "last1"), ("first2", "last2")]
+        authors = []
+        for i in author_fields:
+            author = (rec[i[0]] + " " + rec[i[1]]).strip()
+            if author != "":
+                authors.append(author)
+        values = []
+        for attr in std_fields:
+            if queries.contains(attr)(rec):
+                values.append(rec[attr])
+            elif attr == 'author':
+                values.append(list(set(authors)))
+            else:
+                values.append("")
+        ret.add(Record(std_fields, values))
+    return ret
 
 def std_text(text):
-	return text.lower()
+    """Standardizes a string representing article text"""
+    return text.lower()
 
 def std_data(data, data_type):
-	"""Standardized text formatting so that words and fields can be properly
-	located within a text
-	"""
-	if data_type == 'author':
-		return [d.lower().replace('.', '').replace('-', ' ') for d in data]
-	elif data_type == 'date':
-		return data.lower().replace(',', ' ').replace('-', ' ')
-	elif data_type == 'title':
-		return data.title()
-	return data
+    """Standardized text formatting so that words and fields can be properly
+    located within a text
+    """
+    if data_type == 'author':
+        return [d.lower().replace('.', '').replace('-', ' ') for d in data]
+    elif data_type == 'date':
+        return data.lower().replace(',', ' ').replace('-', ' ')
+    elif data_type == 'title':
+        return data.title()
+    return data
 
-def clean_to_ascii(c):
+def clean_to_ascii(foreign_char):
     """Converts a non-ASCII character into it's ASCII equivalent
 
         >>> clean_to_ascii('ç')
@@ -73,7 +77,7 @@ def clean_to_ascii(c):
         'u': ['û', 'ü', 'ù', 'ú', 'ū'],
         'y': ['ÿ'],
         'z': ['ž', 'ź', 'ż'],
-        'A': ['À', 'Á',' Â', 'Ä', 'Æ', 'Ã', 'Å', 'Ā'],
+        'A': ['À', 'Á', 'Â', 'Ä', 'Æ', 'Ã', 'Å', 'Ā'],
         'C': ['Ç', 'Ć', 'Č'],
         'E': ['È', 'É', 'Ê', 'Ë', 'Ē', 'Ė', 'Ę'],
         'I': ['Î', 'Ï', 'Í', 'Ī', 'Į', 'Ì'],
@@ -85,10 +89,9 @@ def clean_to_ascii(c):
         'Y': ['Ÿ'],
         'Z': ['Ž', 'Ź', 'Ż']
     }
-    if c in sum(special_chars.values(), []):
-        for k in special_chars.keys():
-            if c in special_chars[k]:
+    if foreign_char in sum(special_chars.values(), []):
+        for k in special_chars:
+            if foreign_char in special_chars[k]:
                 return k
-    else:
-        print("Can't convert: " + str(c))
-        return ' '
+    print("Can't convert: " + str(foreign_char))
+    return ' '

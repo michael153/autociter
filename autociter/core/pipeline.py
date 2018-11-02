@@ -22,19 +22,18 @@ import json
 import os
 import os.path
 import re
-import requests
 import string
 import time
 import itertools
+import requests
 
-from autociter.data.storage import Table
-# from boilerpipe.extract import Extractor
 from PyPDF2 import PdfFileReader
 from termcolor import colored
 from dateparser.search import search_dates
 
 import autociter.data.standardize as standardize
 import autociter.data.queries as queries
+from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 
 SUPPORTED_SPECIAL_CHARS = ['-', ':', '.', ' ', '\n', '#']
@@ -43,6 +42,7 @@ ENCODING_COL = list(string.ascii_uppercase) + list(string.ascii_lowercase) + \
 ENCODING_RANGE = len(ENCODING_COL)
 
 # Data Aggregation
+
 
 def get_text_from_url(url):
     """Preliminary method to extract only the relevant article text from a website
@@ -75,7 +75,10 @@ def get_text_from_url(url):
             return ' '.join(scraped_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored("*** Error: Reading pdf in {0} ({1}): {2}".format(func_name, url, e), "red"))
+            print(
+                colored(
+                    "*** Error: Reading pdf in {0} ({1}): {2}".format(
+                        func_name, url, e), "red"))
             return ""
     else:
         try:
@@ -84,17 +87,26 @@ def get_text_from_url(url):
             # Cleans consecutive newlines into just one (e.g ['\n', '\n', 'a'] --> ['\n', 'a'])
             # Cleans all elements containing '#' into just '#' (e.g. '####' --> '#')
             matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
-            words_and_pound_newline = [i for i, j in itertools.zip_longest(matched_words, matched_words[1:]) if i!=j]
-            words_and_pound_newline = [('#' if '#' in x else x) for x in words_and_pound_newline]
-            words_and_pound_newline = [(x.replace('_', '') if '_' in x else x) for x in words_and_pound_newline]
+            words_and_pound_newline = [
+                i for i, j in itertools.zip_longest(matched_words,
+                                                    matched_words[1:]) if i != j
+            ]
+            words_and_pound_newline = [
+                ('#' if '#' in x else x) for x in words_and_pound_newline
+            ]
+            words_and_pound_newline = [(x.replace('_', '') if '_' in x else x)
+                                       for x in words_and_pound_newline]
             ret = ''
-            for i in range(len(words_and_pound_newline)-1):
+            for i in range(len(words_and_pound_newline) - 1):
                 word = words_and_pound_newline[i]
-                if i == 0 or word == '\n' or (i > 0 and words_and_pound_newline[i-1] == '\n'):
+                if i == 0 or word == '\n' or (
+                        i > 0 and words_and_pound_newline[i - 1] == '\n'):
                     ret += word
                 else:
                     ret += (" " + word)
-            print("Text scrape successfully finished in {0} seconds: {1}".format(time.time()-start_time, url))
+            print(
+                "Text scrape successfully finished in {0} seconds: {1}".format(
+                    time.time() - start_time, url))
             return ret
 
             ### Just characters
@@ -102,8 +114,12 @@ def get_text_from_url(url):
             # return ' '.join(total_words)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored("*** Error: Reading text in {0} ({1}): {2}".format(func_name, url, e), "red"))
+            print(
+                colored(
+                    "*** Error: Reading text in {0} ({1}): {2}".format(
+                        func_name, url, e), "red"))
             return ""
+
 
 def get_wiki_article_links_info(file, args):
     """Retrieve article information from wikipedia database Tables, and store
@@ -119,32 +135,37 @@ def get_wiki_article_links_info(file, args):
     labels = {args[x]: x for x in range(len(args))}
     return (data, labels)
 
+
 def find_attr_substr(text, word, category):
-        """Given a string word and the type of data it is (i.e 'date'),
+    """Given a string word and the type of data it is (i.e 'date'),
         return the beginning and ending index of the substring within
         text if found, otherwise (-1, -1)
         """
-        if category == 'date':
-            try:
-                reference_date = datetime.datetime.strptime(word, '%m/%d/%y')
-                # Pass an impossible relative base so that relative words like "today" won't be detected
-                matches = search_dates(text, settings={'STRICT_PARSING': True,
-                                                       'RELATIVE_BASE': datetime.datetime(1000, 1, 1, 0, 0)
-                                                      })
-                if matches:
-                    for original_text, match in matches:
-                        if reference_date.date() == match.date():
-                            index = text.find(original_text)
-                            return (index, index + len(original_text))
-            except Exception as e:
-                func_name = inspect.getframeinfo(inspect.currentframe()).function
-                print(colored(">>> Error in {0}: {1}".format(func_name, e), "red"))
-                return (-1, -1)
-        else:
-            index = text.find(word)
-            if index != -1:
-                return (index, index + len(word))
-        return (-1, -1)
+    if category == 'date':
+        try:
+            reference_date = datetime.datetime.strptime(word, '%m/%d/%y')
+            # Pass an impossible relative base so that relative words like "today" won't be detected
+            matches = search_dates(
+                text,
+                settings={
+                    'STRICT_PARSING': True,
+                    'RELATIVE_BASE': datetime.datetime(1000, 1, 1, 0, 0)
+                })
+            if matches:
+                for original_text, match in matches:
+                    if reference_date.date() == match.date():
+                        index = text.find(original_text)
+                        return (index, index + len(original_text))
+        except Exception as e:
+            func_name = inspect.getframeinfo(inspect.currentframe()).function
+            print(colored(">>> Error in {0}: {1}".format(func_name, e), "red"))
+            return (-1, -1)
+    else:
+        index = text.find(word)
+        if index != -1:
+            return (index, index + len(word))
+    return (-1, -1)
+
 
 def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
@@ -155,7 +176,11 @@ def locate_attributes(text, citation_dict):
         if val:
             data_field = standardize.std_data(val, key)
             if isinstance(data_field, list):
-                pos = [find_attr_substr(std_text, d_, key) for d_ in data_field if d_ in std_text]
+                pos = [
+                    find_attr_substr(std_text, d_, key)
+                    for d_ in data_field
+                    if d_ in std_text
+                ]
                 if pos:
                     location_dict[key] = pos
             else:
@@ -163,6 +188,7 @@ def locate_attributes(text, citation_dict):
                 if pos != (-1, -1):
                     location_dict[key] = pos
     return location_dict
+
 
 def aggregate_data(info, num_points=False):
     """Collect info and manipulate into the proper format to be saved
@@ -183,14 +209,17 @@ def aggregate_data(info, num_points=False):
         if text.strip() != "":
             vec = vectorize_text(text)
             if vec:
-                entry = {'url': url,
-                         'citation_info': {},
-                         'article_one_hot': str(hash_vectorization(vec))}
+                entry = {
+                    'url': url,
+                    'citation_info': {},
+                    'article_one_hot': str(hash_vectorization(vec))
+                }
                 for key in citation_dict.keys():
                     entry['citation_info'][key] = citation_dict[key]
                 entry['locs'] = locate_attributes(text, citation_dict)
                 data.append(entry)
     return data
+
 
 def save_data(file_name, data, override_data=True):
     """Given a file_name and data, a list of tuples containing url link, list of citation info,
@@ -208,7 +237,7 @@ def save_data(file_name, data, override_data=True):
         file.close()
 
     try:
-        if override:
+        if override_data:
             saved_dict = json.load(open(file_name))
         else:
             saved_dict = {}
@@ -225,6 +254,7 @@ def save_data(file_name, data, override_data=True):
     with open(file_name, 'w') as out:
         json.dump(saved_dict, out, sort_keys=True, indent=4)
 
+
 def get_saved_data(file_name):
     """Given a file_name, collect the saved data and return a data dict"""
     if not os.path.isfile(file_name):
@@ -236,7 +266,9 @@ def get_saved_data(file_name):
         saved_dict[k]['article_one_hot'] = unhash_vectorization(str_one_hot)
     return saved_dict
 
+
 # String Vectorization
+
 
 def one_hot(s):
     """Converts a string s into a one-hot encoded vector with default dimensions
@@ -253,7 +285,9 @@ def one_hot(s):
         if ord(char) != 10 and not (ord(char) < 127 and ord(char) > 31):
             char = standardize.clean_to_ascii(char)
         if char not in ENCODING_COL:
-            print(colored("Not in one-hot encoding range: {0}".format(char), 'yellow'))
+            print(
+                colored("Not in one-hot encoding range: {0}".format(char),
+                        'yellow'))
             char = ' '
         if char.isupper():
             mat[i][ord(char) - 65] = 1
@@ -262,9 +296,11 @@ def one_hot(s):
         elif char.isnumeric():
             mat[i][52 + ord(char) - 48] = 1
         elif char in SUPPORTED_SPECIAL_CHARS:
-            ind = len(SUPPORTED_SPECIAL_CHARS) - SUPPORTED_SPECIAL_CHARS.index(char)
-            mat[i][ENCODING_RANGE-ind] = 1
+            ind = len(SUPPORTED_SPECIAL_CHARS) - SUPPORTED_SPECIAL_CHARS.index(
+                char)
+            mat[i][ENCODING_RANGE - ind] = 1
     return mat
+
 
 def slice_text(text, char_len=600):
     """Method that either pads or truncates a text based on the length"""
@@ -275,7 +311,7 @@ def slice_text(text, char_len=600):
         """
         if len(text) > text_len:
             odd = (text_len % 2)
-            return text[0:text_len//2] + text[-(text_len + odd)//2:]
+            return text[0:text_len // 2] + text[-(text_len + odd) // 2:]
         return text
 
     def pad_text(text, text_len=600):
@@ -285,7 +321,7 @@ def slice_text(text, char_len=600):
         if len(text) < text_len:
             cur_len = len(text)
             remainder = text_len - cur_len
-            return text[:cur_len//2] + (' ')*remainder + text[cur_len//2:]
+            return text[:cur_len // 2] + (' ') * remainder + text[cur_len // 2:]
         return text
 
     if len(text) > char_len:
@@ -294,11 +330,13 @@ def slice_text(text, char_len=600):
         text = pad_text(text, char_len)
     return text
 
+
 def unvectorize_text(vec):
     ret = ''
     for row in vec:
         ret += ENCODING_COL[row.index(1)]
     return ret
+
 
 def vectorize_text(text, char_len=600):
     """Given a string of text (already padded, truncated), convert into one hot matrix"""
@@ -307,11 +345,13 @@ def vectorize_text(text, char_len=600):
         return []
     return one_hot(text)
 
+
 def hash_vectorization(vec):
     """Hash a one-hot matrix so that it takes less space, allowing
     data files to be more efficient
     """
     return [v.index(1) for v in vec]
+
 
 def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
     """Unhash hash_vectorization to restore original one-hot matrix"""
@@ -320,10 +360,12 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
         mat[i][hashed_vec[i]] = 1
     return mat
 
+
 # Data aggregation
 if __name__ == '__main__':
     ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
-    INFO = get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv', ['url', 'author', 'date'])
+    INFO = get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv',
+                                       ['url', 'author', 'date'])
     NUM_DATA_POINTS = 100
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
     save_data(ASSETS_PATH + '/data/article_data.dat', DATA, override_data=True)
