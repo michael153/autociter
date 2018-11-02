@@ -9,4 +9,4 @@ __pycache__/
 .DS_Store
 
 # Project Specific
-resources/
+resources/article_data.dat
