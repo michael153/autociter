@@ -70,8 +70,8 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
         total += 1
     return (success, total, scrape_failure, failed_urls)
 
-RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
-INFO = pipeline.get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author'])
+ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
+INFO = pipeline.get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv', ['url', 'author'])
 NUM_DATA_POINTS = 20
 RES = find_attr_in_scraped_article(INFO, ['author'], NUM_DATA_POINTS)
 

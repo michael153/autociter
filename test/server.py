@@ -18,12 +18,14 @@ import socketserver
 import threading
 import os
 
+import assets
+
 HOST, PORT = "localhost", 8000
 
 server = None
-url = "http://" + HOST + ":" + str(PORT)
-# Relocate to directory with index.html
-os.chdir(os.path.dirname(__file__))
+address = "http://" + HOST + ":" + str(PORT)
+# Relocate to the directory with mock html files
+os.chdir(assets.path + "/test")
 
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):

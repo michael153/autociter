@@ -15,8 +15,9 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 import unittest
 
-import test.server as server
 from autociter.web.webpages import Webpage
+from test import server
+import assets
 
 
 class WebpageTest(unittest.TestCase):
@@ -25,30 +26,34 @@ class WebpageTest(unittest.TestCase):
     def setUpClass(cls):
         server.start()
 
+    def setUp(self):
+        self.url = server.address + "/simple_webpage.html"
+
     def testUrl(self):
-        w = Webpage(server.url)
-        self.assertEqual(server.url, w.url)
+        w = Webpage(self.url)
+        self.assertEqual(self.url, w.url)
 
     def testRepr(self):
-        w = Webpage(server.url)
-        self.assertEqual("Webpage('" + server.url + "')", repr(w))
+        w = Webpage(self.url)
+        self.assertEqual("Webpage('" + self.url + "')", repr(w))
 
     def testStr(self):
-        w = Webpage(server.url)
-        self.assertEqual(server.url, str(w))
+        w = Webpage(self.url)
+        self.assertEqual(self.url, str(w))
 
     def testEquals(self):
-        w1 = Webpage(server.url)
-        w2 = Webpage(server.url)
+        w1 = Webpage(self.url)
+        w2 = Webpage(self.url)
         self.assertEqual(w1, w2)
 
     def testSource(self):
-        w = Webpage(server.url)
-        with open("index.html") as source:
+        w = Webpage(self.url)
+        filename = assets.path + "/test/simple_webpage.html"
+        with open(filename) as source:
             self.assertEqual(w.source, source.read())
 
     def testMarkdown(self):
-        w = Webpage(server.url)
+        w = Webpage(self.url)
         self.assertEqual("# Heading\n\nThis is a paragraph.", w.markdown)
 
     @classmethod

@@ -33,7 +33,7 @@ from keras.callbacks import Callback
 
 import autociter.core.pipeline as pipeline
 
-RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
+ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 
 class early_stop_by_loss_val(Callback):
     def __init__(self, monitor='val_loss', value=0.000005, verbose=0):
@@ -100,7 +100,7 @@ def get_x_y(train_data, attribute=""):
 
 
 def train(num, max_epoch = 50, nfolds = 10, batch_size = 128):
-    saved_article_data_PATH = RESOURCES_PATH + '/savedArticleData.dat'
+    saved_article_data_PATH = ASSETS_PATH + '/data/article_data.dat'
     saved_article_data = pipeline.get_saved_data(saved_article_data_PATH)
 
     article_data = list(saved_article_data.values())[:num]

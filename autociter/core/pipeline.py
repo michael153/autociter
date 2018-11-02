@@ -194,7 +194,7 @@ def aggregate_data(info, num_points=False):
 
 def save_data(file_name, data, override_data=True):
     """Given a file_name and data, a list of tuples containing url link, list of citation info,
-    create an entry in the dict in savedArticleData.dat
+    create an entry in the dict in article_data.dat
     Arguments:
         file_name, a string file name
         data, a list of dicts, each dict contains the citation information, url, and text
@@ -349,11 +349,11 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
 
 # Data aggregation
 if __name__ == '__main__':
-    RESOURCES_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../resources'
-    INFO = get_wiki_article_links_info(RESOURCES_PATH + '/data.txt', ['url', 'author', 'date'])
+    ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
+    INFO = get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv', ['url', 'author', 'date'])
     NUM_DATA_POINTS = 100
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
-    save_data(RESOURCES_PATH + '/savedArticleData.dat', DATA, override_data=True)
+    save_data(ASSETS_PATH + '/data/article_data.dat', DATA, override_data=True)
 
-# d = get_saved_data('assets/savedArticleData.dat')
+# d = get_saved_data('assets/article_data.dat')
 # print(json.dumps(d, sort_keys=True, indent=4))
