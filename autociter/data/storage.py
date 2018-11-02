@@ -17,9 +17,10 @@
 from autociter.utils import multithreading
 
 
-def csv(item):
+
+def csv(item, delimiter):
     """Return the csv-valid representation of an object."""
-    return type(item).__csv__(item)
+    return type(item).__csv__(item, delimiter)
 
 
 class Table:
@@ -63,7 +64,7 @@ class Table:
         with open(filename, "w", encoding="utf-8") as file:
             file.write(self.header + "\n")
             for record in self.records:
-                file.write(csv(record) + "\n")
+                file.write(csv(record, self.DELIMITER) + "\n")
 
     @property
     def header(self):
@@ -108,7 +109,6 @@ class Record:
     """A record in a data table."""
 
     LABEL_SIZE = 5
-    DELIMITER = "\t"
 
     def __init__(self, fields, values):
         self.fields, self.values = fields, values
@@ -125,11 +125,11 @@ class Record:
             return False
         return self.data == other.data
 
-    def __csv__(self):
+    def __csv__(self, delimiter):
         """Return csv-compatible representation."""
         string = ""
         for field in self.data:
-            string += self.data[field] + self.DELIMITER
+            string += self.data[field] + delimiter
         return string.rstrip()
 
     def __repr__(self):
@@ -139,6 +139,6 @@ class Record:
         string = ""
         for field in self.data:
             if self.data[field]:
-                string += field[:self.LABEL_SIZE] + self.DELIMITER
+                string += field[:self.LABEL_SIZE] + "\t"
                 string += str(self.data[field]) + "\n"
         return string.rstrip()

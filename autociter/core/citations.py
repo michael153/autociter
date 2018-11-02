@@ -40,7 +40,6 @@ class WikipediaCitation:
             string: A raw article reference.
         """
         self.string, self.data = clean(string), {}
-        self.assigner, self.delimiter = "=", "|"
         for attribute in self.ATTRIBUTES:
             self.data[attribute] = self.find(attribute, self.string)
 
@@ -73,9 +72,9 @@ class WikipediaCitation:
     def __contains__(self, attribute):
         return self.data[attribute] != ""
 
-    def __csv__(self):
+    def __csv__(self, delimiter):
         """Return csv-compatible representation."""
         string = ""
         for attribute in self.ATTRIBUTES:
-            string += str(self.data[attribute]) + "\t"
+            string += str(self.data[attribute]) + delimiter
         return string.rstrip()
