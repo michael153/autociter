@@ -73,6 +73,7 @@ class Table:
 
     @property
     def records(self):
+        """Return a list of this table's records."""
         return list(self.dictionary.values())
 
     def query(self, function):
@@ -112,8 +113,8 @@ class Table:
         self.dictionary[key] = record
 
     def __contains__(self, record):
-        for r in self.records.values():
-            if record == r:
+        for value in self.dictionary.values():
+            if record == value:
                 return True
         return False
 
