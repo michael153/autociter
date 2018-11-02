@@ -48,8 +48,7 @@ class WikipediaArticleTest(unittest.TestCase):
 
     def testCsv(self):
         r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertEqual("Painting\tBob Ross", r.__csv__())
-
+        self.assertEqual("Painting\tBob Ross", r.__csv__("\t"))
 
     def testRepr(self):
         r = Record(["title"], ["Flyff"])
