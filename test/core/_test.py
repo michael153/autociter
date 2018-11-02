@@ -15,18 +15,45 @@
 # Author: Michael Wan <m.wan@berkeley.edu>
 """Test various functions and their practicality / success rate"""
 import os
+import datetime
+import inspect
 
 from termcolor import colored
+from dateparser.search import search_dates
 
 import autociter.data.standardize as standardize
 import autociter.core.pipeline as pipeline
 
 
-def find_attr_in_text(article_text, single_field):
-    """For a text (representing the article), check whether the string
-    single_field can be located within the text
-    """
-    return single_field in article_text
+def find_attr_substr(text, word, category):
+    """Given a string word and the type of data it is (i.e 'date'),
+        return the beginning and ending index of the substring within
+        text if found, otherwise (-1, -1)
+        """
+    if category == 'date':
+        try:
+            reference_date = datetime.datetime.strptime(word, '%m/%d/%y')
+            # Pass an impossible relative base so that relative words like "today" won't be detected
+            matches = search_dates(
+                text,
+                settings={
+                    'STRICT_PARSING': True,
+                    'RELATIVE_BASE': datetime.datetime(1000, 1, 1, 0, 0)
+                })
+            if matches:
+                for original_text, match in matches:
+                    if reference_date.date() == match.date():
+                        index = text.find(original_text)
+                        return (index, index + len(original_text))
+        except Exception as e:
+            func_name = inspect.getframeinfo(inspect.currentframe()).function
+            print(colored(">>> Error in {0}: {1}".format(func_name, e), "red"))
+            return (-1, -1)
+    else:
+        index = text.find(word)
+        if index != -1:
+            return (index, index + len(word))
+    return (-1, -1)
 
 
 def find_attr_in_scraped_article(info, attributes, num_points=False):
@@ -53,16 +80,18 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
             continue
 
         std_fields = [
-            standardize.std_data(f, a) for f, a in zip(data_fields, attributes)
+            (standardize.std_data(f, a), a) for f, a in zip(data_fields, attributes)
         ]
         pass_case = True
 
-        for field in std_fields:
+        for field, attribute in std_fields:
             if isinstance(field, list):
                 for i in field:
-                    pass_case = pass_case and find_attr_in_text(text, i)
+                    pass_case = pass_case and (find_attr_substr(text, i, attribute) != (-1, -1))
+                    if not pass_case:
+                        break
             else:
-                pass_case = pass_case and find_attr_in_text(text, field)
+                pass_case = pass_case and (find_attr_substr(text, field, attribute) != (-1, -1))
             if not pass_case:
                 break
 
