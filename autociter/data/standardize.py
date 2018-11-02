@@ -54,3 +54,41 @@ def std_data(data, data_type):
 	elif data_type == 'title':
 		return data.title()
 	return data
+
+def clean_to_ascii(c):
+    """Converts a non-ASCII character into it's ASCII equivalent
+
+        >>> clean_to_ascii('ç')
+        'c'
+    """
+    special_chars = {
+        'a': ['à', 'á', 'â', 'ä', 'æ', 'ã', 'å', 'ā'],
+        'c': ['ç', 'ć', 'č'],
+        'e': ['è', 'é', 'ê', 'ë', 'ē', 'ė', 'ę'],
+        'i': ['î', 'ï', 'í', 'ī', 'į', 'ì'],
+        'l': ['ł'],
+        'n': ['ñ', 'ń'],
+        'o': ['ô', 'ö', 'ò', 'ó', 'œ', 'ø', 'ō', 'õ'],
+        's': ['ß', 'ś', 'š'],
+        'u': ['û', 'ü', 'ù', 'ú', 'ū'],
+        'y': ['ÿ'],
+        'z': ['ž', 'ź', 'ż'],
+        'A': ['À', 'Á',' Â', 'Ä', 'Æ', 'Ã', 'Å', 'Ā'],
+        'C': ['Ç', 'Ć', 'Č'],
+        'E': ['È', 'É', 'Ê', 'Ë', 'Ē', 'Ė', 'Ę'],
+        'I': ['Î', 'Ï', 'Í', 'Ī', 'Į', 'Ì'],
+        'L': ['Ł'],
+        'N': ['Ñ', 'Ń'],
+        'O': ['Ô', 'Ö', 'Ò', 'Ó', 'Œ', 'Ø', 'Ō', 'Õ'],
+        'S': ['Ś', 'Š'],
+        'U': ['Û', 'Ü', 'Ù', 'Ú', 'Ū'],
+        'Y': ['Ÿ'],
+        'Z': ['Ž', 'Ź', 'Ż']
+    }
+    if c in sum(special_chars.values(), []):
+        for k in special_chars.keys():
+            if c in special_chars[k]:
+                return k
+    else:
+        print("Can't convert: " + str(c))
+        return ' '

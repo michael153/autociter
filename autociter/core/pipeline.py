@@ -238,33 +238,6 @@ def get_saved_data(file_name):
 
 # String Vectorization
 
-def clean_to_ascii(c):
-    """Converts a non-ASCII character into it's ASCII equivalent
-
-        >>> clean_to_ascii('ç')
-        'c'
-    """
-    special_chars = {
-        'a': ['à', 'á', 'â', 'ä', 'æ', 'ã', 'å', 'ā'],
-        'c': ['ç', 'ć', 'č'],
-        'e': ['è', 'é', 'ê', 'ë', 'ē', 'ė', 'ę'],
-        'i': ['î', 'ï', 'í', 'ī', 'į', 'ì'],
-        'l': ['ł'],
-        'n': ['ñ', 'ń'],
-        'o': ['ô', 'ö', 'ò', 'ó', 'œ', 'ø', 'ō', 'õ'],
-        's': ['ß', 'ś', 'š'],
-        'u': ['û', 'ü', 'ù', 'ú', 'ū'],
-        'y': ['ÿ'],
-        'z': ['ž', 'ź', 'ż']
-    }
-    if c in sum(special_chars.values(), []):
-        for k in special_chars.keys():
-            if c in special_chars[k]:
-                return k
-    else:
-        print("Can't convert: " + str(c))
-        return ' '
-
 def one_hot(s):
     """Converts a string s into a one-hot encoded vector with default dimensions
        of 600 by ENCODING_RANGE.
@@ -277,8 +250,8 @@ def one_hot(s):
     mat = [[0 for _ in range(ENCODING_RANGE)] for __ in range(len(s))]
     for i in range(len(s)):
         char = s[i]
-        if not ord(char) != 10 and (ord(char) < 127 and ord(char) > 31):
-            char = clean_to_ascii(char)
+        if ord(char) != 10 and not (ord(char) < 127 and ord(char) > 31):
+            char = standardize.clean_to_ascii(char)
         if char not in ENCODING_COL:
             print(colored("Not in one-hot encoding range: {0}".format(char), 'yellow'))
             char = ' '
