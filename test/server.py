@@ -21,9 +21,10 @@ import os
 HOST, PORT = "localhost", 8000
 
 server = None
-url = "http://" + HOST + ":" + str(PORT) 
+url = "http://" + HOST + ":" + str(PORT)
 # Relocate to directory with index.html
 os.chdir(os.path.dirname(__file__))
+
 
 class CustomHandler(http.server.SimpleHTTPRequestHandler):
 
