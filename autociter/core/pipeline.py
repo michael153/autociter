@@ -171,7 +171,7 @@ def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
 
     location_dict = {}
-    std_text = # pylint.std_text(text)
+    std_text = standardization.std_text(text)
     for key, val in citation_dict.items():
         if val:
             data_field = standardization.std_data(val, key)
