@@ -26,7 +26,7 @@ from termcolor import colored
 
 from sklearn.model_selection import train_test_split
 
-from keras.layers.core import Dense
+from keras.layers import LSTM, Dense, Dropout
 from keras.models import Sequential
 from keras.layers.embeddings import Embedding
 from keras.callbacks import Callback
@@ -59,28 +59,22 @@ class early_stop_by_loss_val(Callback):
 def build_model(input_length=68, output_dim=600):
     '''Builds a Keras machine learning model
     Takes matrices of size (600, 68)
-    Outputs (600, 2) (Softmax)
+    Outputs (600,) (Softmax)
     '''
     model = Sequential()
     # model.add(Embedding(600, 300, input_length=input_length))
-    model.add(
-        Dense(
-            150,
-            input_dim=600,
-            output_dim=300,
-            activation='sigmoid',
-            kernel_initializer='uniform'))
-
-    model.add(Dense(300, activation='sigmoid', kernel_initializer='uniform'))
-    model.add(Dense(150, activation='sigmoid', kernel_initializer='uniform'))
-    model.add(Dense(300, activation='sigmoid', kernel_initializer='uniform'))
 
     model.add(
-        Dense(
-            output_dim=output_dim,
-            activation='softmax',
-            kernel_initializer='uniform'))
+        LSTM(600,
+             input_shape = (600, 68),
+             return_sequences = True)
+        )
 
+    model.add(Dropout(0.2))
+    model.add(LSTM(200))
+    model.add(Dropout(0.2))
+    model.add(Dense(600, activation='softmax'))
+   
     start = time.time()
 
     model.compile(
@@ -121,14 +115,14 @@ def get_x_y(train_data, attribute=""):
     return np.array(x), np.array(y)
 
 
-def train(num, max_epoch=50, nfolds=10, batch_size=128):
+def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
     saved_article_data_PATH = ASSETS_PATH + '/data/article_data.dat'
     saved_article_data = pipeline.get_saved_data(saved_article_data_PATH)
 
     article_data = list(saved_article_data.values())[:num]
     process_id = int(time.time())
 
-    X, Y = get_x_y(article_data, attribute='author')
+    X, Y = get_x_y(article_data, attribute=attribute)
     print(X.shape)
 
     callbacks = [
@@ -158,13 +152,20 @@ def train(num, max_epoch=50, nfolds=10, batch_size=128):
                 x_train,
                 y_train,
                 batch_size=batch_size,
-                nb_epoch=1,
+                epochs=1,
                 validation_split=0.05,
                 callbacks=callbacks)
 
             t_probs = model.predict_proba(x_holdout)
+
+            print("t_probs.shape: ", t_probs.shape)
+            print("y_holdout.shape: ", y_holdout.shape)
+            
+            # t_probs = t_probs.reshape((600, ))
+            # y_holdout = y_holdout.reshape((600, ))
+
             t_auc = sklearn.metrics.roc_auc_score(y_holdout, t_probs)
-            print('Epoch %d: auc = %f (best=%f)' % (epoch, t_auc, best_auc))
+            print(colored('Epoch %d: auc = %f (best=%f)\n' % (epoch, t_auc, best_auc), "green"))
             if t_auc > best_auc:
                 best_auc = t_auc
                 best_iter = epoch
@@ -173,6 +174,12 @@ def train(num, max_epoch=50, nfolds=10, batch_size=128):
                     break
 
         probs = model.predict_proba(x_test)
+        print("probs.shape: ", probs.shape)
+        print("y_test.shape: ", y_test.shape)
+
+        # probs = probs.reshape((600, ))
+        # y_test = y_test.reshape((600, ))
+
         m_auc = sklearn.metrics.roc_auc_score(y_test, probs)
         print('\nScore is %f' % m_auc)
         if m_auc > best_m_auc:
@@ -180,4 +187,4 @@ def train(num, max_epoch=50, nfolds=10, batch_size=128):
             optimal_model = model
 
 
-train(40)
+train('author', 500)
