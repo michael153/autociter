@@ -51,7 +51,7 @@ class WebpageTest(unittest.TestCase):
 
     def testSource(self):
         w = Webpage(self.url)
-        filename = assets.path + "/test/simple_webpage.html"
+        filename = assets.WEBPAGES_PATH + "/simple_webpage.html"
         with open(filename) as source:
             self.assertEqual(w.source, source.read())
 
