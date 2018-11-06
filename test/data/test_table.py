@@ -26,7 +26,7 @@ import assets
 class TableTest(unittest.TestCase):
 
     def setUp(self):
-        self.filename = assets.path + "/test/mock_data.csv"
+        self.filename = assets.MOCK_DATA_PATH + "/mock_table_data.csv"
 
     def testInit_emptyTable(self):
         table = Table(fields=["shoe", "color"])

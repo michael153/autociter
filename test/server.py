@@ -25,7 +25,7 @@ HOST, PORT = "localhost", 8000
 ADDRESS = "http://" + HOST + ":" + str(PORT)
 
 # Relocate to the directory with mock html files
-os.chdir(assets.path + "/test")
+os.chdir(assets.WEBPAGES_PATH)
 server = None  # pylint: disable=invalid-name
 
 

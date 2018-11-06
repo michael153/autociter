@@ -13,8 +13,7 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-import os
+"""Define methods for sampling collections."""
 
-PATH = os.path.dirname(os.path.realpath(__file__))
-MOCK_DATA_PATH = PATH + "/mock_data"
-WEBPAGES_PATH = PATH + "/webpages"
+def SimpleRandomSample(size=30):
+    pass
