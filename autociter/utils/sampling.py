@@ -14,6 +14,13 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define methods for sampling collections."""
+import random
 
-def SimpleRandomSample(size=30):
-    pass
+
+def SimpleRandomSample(collection, size=30):
+    sample = []
+    for _ in range(size):
+        random_index = random.randint(0, len(collection) - 1)
+        random_element = collection[random_index]
+        sample.append(random_element)
+    return sample
