@@ -23,6 +23,7 @@ import os
 import os.path
 import re
 import string
+import sys
 import time
 import itertools
 import requests
@@ -128,12 +129,13 @@ def get_wiki_article_links_info(file, args):
     """
 
     print("Reading Wikipedia Article Links from...", file)
-
+    start_time = time.time()
     table = standardization.std_table(Table(file)).query(
         queries.contains(*args))
     data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
+    print("Links successfully collected in {0} seconds\n".format(time.time() - start_time))
     return (data, labels)
 
 
@@ -203,6 +205,7 @@ def aggregate_data(info, num_points=False):
     data = []
     if num_points:
         datapoints = datapoints[:num_points]
+        print("Getting {0} points...".format(num_points))
     for entry in datapoints:
         url = entry[label_lookup['url']]
         citation_dict = {x: entry[label_lookup[x]] for x in label_lookup.keys()}
@@ -367,7 +370,10 @@ if __name__ == '__main__':
     ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
     INFO = get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv',
                                        ['url', 'author', 'date'])
-    NUM_DATA_POINTS = 1000
+    if len(sys.argv) > 1:
+        NUM_DATA_POINTS = int(sys.argv[1])
+    else:
+        NUM_DATA_POINTS = 1000
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
     save_data(ASSETS_PATH + '/data/article_data.dat', DATA, override_data=True)
 
