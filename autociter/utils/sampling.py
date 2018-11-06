@@ -18,6 +18,8 @@ import random
 
 
 def SimpleRandomSample(collection, size=30):
+    if not hasattr(collection, '__iter__'):
+        raise TypeError("collection must be iterable.")
     sample = []
     for _ in range(size):
         random_index = random.randint(0, len(collection) - 1)
