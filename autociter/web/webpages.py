@@ -53,7 +53,7 @@ class Webpage:
         return parser.handle(self.source).rstrip()
 
     @property
-    @timeout(5)
+    @timeout(15)
     def content(self):
         """Retrieve the content of a webpage as markdown.
 
