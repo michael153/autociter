@@ -103,7 +103,7 @@ class Table:
             record: A Record object with the same fields as this table
             key: The desired key for the record (optional)
         """
-        if not hasattr(record, fields) or not hasattr(record, values):
+        if not hasattr(record, 'fields') or not hasattr(record, 'values'):
             raise TypeError("Expected object with fields and values.")
         if record.fields != self.fields:
             raise ValueError("Table and record fields are mismatched.")
@@ -118,7 +118,7 @@ class Table:
         Arguments:
             records: A collection of Record objects.
         """
-        if not hasattr(records, __iter__):
+        if not hasattr(records, '__iter__'):
             raise TypeError("records must be iterable.")
         for record in records:
             self.add(record)
