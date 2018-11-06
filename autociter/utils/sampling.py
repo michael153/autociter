@@ -18,6 +18,12 @@ import random
 
 
 def simple_random_sample(collection, size=30):
+    """Generate a simple random sample of some collection.
+
+    Arguments:
+        collection: Some collection of objects
+        size: The sample size (by default 30)
+    """
     sample = []
     for _ in range(size):
         random_index = random.randint(0, len(collection) - 1)
