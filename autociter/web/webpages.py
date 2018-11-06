@@ -15,6 +15,8 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Webpage and WikipediaArticle objects."""
 from urllib import request
+
+from timeout_decorator import timeout
 import html2text
 
 
@@ -51,6 +53,7 @@ class Webpage:
         return parser.handle(self.source).rstrip()
 
     @property
+    @timeout(5)
     def content(self):
         """Retrieve the content of a webpage as markdown.
 
@@ -98,6 +101,17 @@ class Webpage:
         start = find_title(self.markdown)
         content = self.markdown[start:]
         return clean(content)
+
+    @property
+    def heading(self):
+        """Return the predicted header of the webpage.
+
+        The content of a webpage should be formatted such that it starts with
+        a heading, such as "## Article Name".
+        """
+        whitespace_index = self.content.find(" ")
+        newline_index = markdown.find("\n", whitespace_index)
+        return self.content[whitespace_index + 1: newline_index]
 
 
 class WikipediaArticle(Webpage):

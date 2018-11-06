@@ -16,7 +16,7 @@
 """Test methods of the Table object defined in data.storage."""
 import unittest
 
-from autociter.utils.sampling import SimpleRandomSample
+from autociter.utils.sampling import simple_random_sample
 
 
 # pylint: disable=missing-docstring,
