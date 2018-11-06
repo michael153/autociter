@@ -367,7 +367,7 @@ if __name__ == '__main__':
     ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
     INFO = get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv',
                                        ['url', 'author', 'date'])
-    NUM_DATA_POINTS = 100
+    NUM_DATA_POINTS = 1000
     DATA = aggregate_data(INFO, NUM_DATA_POINTS)
     save_data(ASSETS_PATH + '/data/article_data.dat', DATA, override_data=True)
 
