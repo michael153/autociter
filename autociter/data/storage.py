@@ -36,18 +36,28 @@ class Table:
             filename: The name of a data sheet.
         """
         self.dictionary = {}
+        if fields and not hasattr(fields, "__iter__"):
+            raise TypeError("fields must be a collection.")
         self.fields = fields
         if filename:
             self.load(filename)
 
     def load(self, filename, num_records=1000000):
-        """Load data from a file."""
+        """Load data from a file and return table.
+
+        By default, the load method will add at most one million records.
+
+        Arguments:
+            filename: The name of some data file
+            num_records: How many records should be loaded
+        """
         with open(filename, encoding="utf-8") as file:
             lines = file.read().splitlines()
         if not self.fields:
             self.fields = lines[0].split(self.DELIMITER)
         for line in lines[1:num_records + 1]:
             self.add(self.parse(line))
+        return self
 
     def parse(self, line):
         """Parse a line of text that represents a data record."""

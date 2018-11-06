@@ -64,17 +64,13 @@ def build_model(input_length=68, output_dim=600):
     model = Sequential()
     # model.add(Embedding(600, 300, input_length=input_length))
 
-    model.add(
-        LSTM(600,
-             input_shape = (600, 68),
-             return_sequences = True)
-        )
+    model.add(LSTM(600, input_shape=(600, 68), return_sequences=True))
 
     model.add(Dropout(0.2))
     model.add(LSTM(200))
     model.add(Dropout(0.2))
     model.add(Dense(600, activation='softmax'))
-   
+
     start = time.time()
 
     model.compile(
@@ -160,12 +156,15 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
 
             print("t_probs.shape: ", t_probs.shape)
             print("y_holdout.shape: ", y_holdout.shape)
-            
+
             # t_probs = t_probs.reshape((600, ))
             # y_holdout = y_holdout.reshape((600, ))
 
             t_auc = sklearn.metrics.roc_auc_score(y_holdout, t_probs)
-            print(colored('Epoch %d: auc = %f (best=%f)\n' % (epoch, t_auc, best_auc), "green"))
+            print(
+                colored(
+                    'Epoch %d: auc = %f (best=%f)\n' % (epoch, t_auc, best_auc),
+                    "green"))
             if t_auc > best_auc:
                 best_auc = t_auc
                 best_iter = epoch

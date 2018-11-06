@@ -69,17 +69,14 @@ class TableTest(unittest.TestCase):
 
     def test_query(self):
         table = Table(self.filename)
+        backup = Table(self.filename)
 
         def in_math_department(record):
             return record["department"] == "Mathematics"
 
         queried = table.query(in_math_department)
         self.assertEqual(len(queried), 2)
-
-    def test_query_is_nondestructive(self):
-        table = Table(self.filename)
-        backup = Table(self.filename)
-        table.query(lambda record: False)
+        # Test query is nondestructive
         self.assertEqual(table, backup)
 
     def test_get_item(self):

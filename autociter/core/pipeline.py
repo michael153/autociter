@@ -135,7 +135,8 @@ def get_wiki_article_links_info(file, args):
     data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
-    print("Links successfully collected in {0} seconds\n".format(time.time() - start_time))
+    print("Links successfully collected in {0} seconds\n".format(time.time() -
+                                                                 start_time))
     return (data, labels)
 
 
