@@ -24,14 +24,14 @@ class SamplingTest(unittest.TestCase):
 
     def test_simple_random_sample_returns_correct_sample_size(self):
         collection = list(range(100))
-        default_size_sample = SimpleRandomSample(collection)
-        size_five_sample = SimpleRandomSample(collection, 5)
+        default_size_sample = simple_random_sample(collection)
+        size_five_sample = simple_random_sample(collection, 5)
         self.assertEqual(30, len(default_size_sample))
         self.assertEqual(5, len(size_five_sample))
 
     def test_simple_random_sample_is_random(self):
         collection = [0, 1]
-        large_sample = SimpleRandomSample(collection, 100000)
+        large_sample = simple_random_sample(collection, 100000)
         is_even = lambda element: element % 2 == 0
         even_elements = list(filter(is_even, large_sample))
         proportion_even = len(even_elements) / len(large_sample)

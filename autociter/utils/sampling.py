@@ -17,7 +17,7 @@
 import random
 
 
-def SimpleRandomSample(collection, size=30):
+def simple_random_sample(collection, size=30):
     if not hasattr(collection, '__iter__'):
         raise TypeError("collection must be iterable.")
     sample = []
