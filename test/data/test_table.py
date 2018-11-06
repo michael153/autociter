@@ -136,6 +136,15 @@ class TableTest(unittest.TestCase):
         table = Table(self.filename)
         self.assertEqual(len(table), 4)
 
+    def test_extend(self):
+        table = Table(fields=["name", "GPA"])
+        records = [Record(table.fields, ["Bryson Bauer", 3.34]),
+                   Record(table.fields, ["Ian Fumusa", 2.27])]
+        table.extend(records)
+        self.assertTrue(len(table) == 2)
+        self.assertEqual(table[0], records[0])
+        self.assertEqual(table[1], records[1])
+
     def testIter(self):
         table = Table(fields=["name", "GPA"])
         record1 = Record(table.fields, ["Bryson Bauer", 3.34])
