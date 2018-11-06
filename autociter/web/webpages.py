@@ -16,8 +16,9 @@
 """Define Webpage and WikipediaArticle objects."""
 from urllib import request
 
-from timeout_decorator import timeout
 import html2text
+
+from autociter.utils.decorators import timeout
 
 
 class Webpage:
@@ -25,6 +26,7 @@ class Webpage:
 
     def __init__(self, url):
         self.url = url
+        self.cache = {}
 
     def __repr__(self):
         return "Webpage('{0}')".format(self.url)
@@ -40,20 +42,26 @@ class Webpage:
     @property
     def source(self):
         """Return the source code of a webpage."""
+        if self.cache.get("source"):
+            return self.cache["source"]
         client = request.urlopen(self.url)
         bytecode = client.read()
-        return bytecode.decode("utf-8", "replace")
+        self.cache["source"] = bytecode.decode("utf-8", "replace")
+        return self.cache["source"]
 
     @property
     def markdown(self):
         """Return the text of a webpage in markdown formatting."""
+        if self.cache.get("markdown"):
+            return self.cache["markdown"]
         parser = html2text.HTML2Text()
         parser.ignore_images = True
         parser.ignore_links = True
-        return parser.handle(self.source).rstrip()
+        self.cache["markdown"] = parser.handle(self.source).rstrip()
+        return self.cache["markdown"]
 
     @property
-    @timeout(15)
+    #@timeout(15)
     def content(self):
         """Retrieve the content of a webpage as markdown.
 
@@ -63,6 +71,8 @@ class Webpage:
         article is the first large heading and that all relevant information
         occurs after the title.
         """
+        if self.cache.get("content"):
+            return self.cache["content"]
         ignored_headers = {"Search", "News", "Home"}
         ignored_substrings = {"Image\n\n"}
 
@@ -100,18 +110,8 @@ class Webpage:
 
         start = find_title(self.markdown)
         content = self.markdown[start:]
-        return clean(content)
-
-    @property
-    def heading(self):
-        """Return the predicted header of the webpage.
-
-        The content of a webpage should be formatted such that it starts with
-        a heading, such as "## Article Name".
-        """
-        whitespace_index = self.content.find(" ")
-        newline_index = markdown.find("\n", whitespace_index)
-        return self.content[whitespace_index + 1: newline_index]
+        self.cache["content"] = clean(content)
+        return self.cache["content"]
 
 
 class WikipediaArticle(Webpage):

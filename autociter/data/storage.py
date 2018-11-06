@@ -36,19 +36,17 @@ class Table:
             filename: The name of a data sheet.
         """
         self.dictionary = {}
+        self.fields = fields
         if filename:
             self.load(filename)
-        else:
-            if not fields:
-                raise ValueError("Expected at least one field.")
-            self.fields = fields
 
-    def load(self, filename):
+    def load(self, filename, num_records=1000000):
         """Load data from a file."""
         with open(filename, encoding="utf-8") as file:
             lines = file.read().splitlines()
-        self.fields = lines[0].split(self.DELIMITER)
-        for line in lines[1:]:
+        if not self.fields:
+            self.fields = lines[0].split(self.DELIMITER)
+        for line in lines[1:num_records + 1]:
             self.add(self.parse(line))
 
     def parse(self, line):
@@ -75,6 +73,20 @@ class Table:
     def records(self):
         """Return a list of this table's records."""
         return list(self.dictionary.values())
+
+    def find(self, field, value):
+        """Return the first record that contains the given field-value pair.
+
+        If no such values are found, the method returns None.
+
+        Arguments:
+            field: A record field
+            value: A record value
+        """
+        for record in self.records:
+            if record[field] == value:
+                return record
+        return None
 
     def query(self, function):
         """Return a Table containing records that satisfy some function."""

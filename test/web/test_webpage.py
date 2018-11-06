@@ -22,7 +22,7 @@ import assets
 from autociter.web.webpages import Webpage
 
 
-# pylint: disable=invalid-name, missing-docstring
+# pylint: disable=missing-docstring
 class WebpageTest(unittest.TestCase):
 
     @classmethod
@@ -32,32 +32,32 @@ class WebpageTest(unittest.TestCase):
     def setUp(self):
         self.url = server.ADDRESS + "/simple_webpage.html"
 
-    def testUrl(self):
-        w = Webpage(self.url)
-        self.assertEqual(w.url, self.url)
+    def test_url(self):
+        webpage = Webpage(self.url)
+        self.assertEqual(webpage.url, self.url)
 
-    def testRepr(self):
-        w = Webpage(self.url)
-        self.assertEqual("Webpage('" + self.url + "')", repr(w))
+    def test_repr(self):
+        webpage = Webpage(self.url)
+        self.assertEqual("Webpage('" + self.url + "')", repr(webpage))
 
-    def testStr(self):
-        w = Webpage(self.url)
-        self.assertEqual(self.url, str(w))
+    def test_str(self):
+        webpage = Webpage(self.url)
+        self.assertEqual(self.url, str(webpage))
 
-    def testEquals(self):
-        w1 = Webpage(self.url)
-        w2 = Webpage(self.url)
-        self.assertEqual(w1, w2)
+    def test_equals(self):
+        webpage1 = Webpage(self.url)
+        webpage2 = Webpage(self.url)
+        self.assertEqual(webpage1, webpage2)
 
-    def testSource(self):
-        w = Webpage(self.url)
+    def test_source(self):
+        webpage = Webpage(self.url)
         filename = assets.WEBPAGES_PATH + "/simple_webpage.html"
         with open(filename) as source:
-            self.assertEqual(w.source, source.read())
+            self.assertEqual(webpage.source, source.read())
 
-    def testMarkdown(self):
-        w = Webpage(self.url)
-        self.assertEqual("# Heading\n\nThis is a paragraph.", w.markdown)
+    def test_markdown(self):
+        webpage = Webpage(self.url)
+        self.assertEqual("# Heading\n\nThis is a paragraph.", webpage.markdown)
 
     @classmethod
     def tearDownClass(cls):

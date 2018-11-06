@@ -19,43 +19,40 @@ import unittest
 from autociter.data.storage import Record
 
 
-# pylint: disable=invalid-name, missing-docstring
+# pylint: disable=missing-docstring
 class WikipediaArticleTest(unittest.TestCase):
 
-    def testGetItem(self):
-        r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertEqual("Bob Ross", r["author"])
+    def test_get_item(self):
+        record = Record(["title", "author"], ["Painting", "Bob Ross"])
+        self.assertEqual("Bob Ross", record["author"])
 
-    def testGetItem_noValue(self):
-        r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertEqual("", r["url"])
+    def test_get_item_with_no_value(self):
+        record = Record(["title", "author"], ["Painting", "Bob Ross"])
+        self.assertEqual("", record["url"])
 
-    def testContains(self):
-        r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertTrue("title" in r)
+    def test_contains(self):
+        record = Record(["title", "author"], ["Painting", "Bob Ross"])
+        self.assertTrue("title" in record)
 
-    def testContains_nonexistantField(self):
-        r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertFalse("url" in r)
+    def test_contains_nonexistant_field(self):
+        record = Record(["title", "author"], ["Painting", "Bob Ross"])
+        self.assertFalse("url" in record)
 
-    def testEquals_sameValues(self):
-        r1 = Record(["title", "author"], ["Painting", "Bob Ross"])
-        r2 = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertEqual(r1, r2)
+    def test_equals(self):
+        record1 = Record(["title", "author"], ["Painting", "Bob Ross"])
+        record2 = Record(["title", "author"], ["Painting", "Bob Ross"])
+        record3 = Record(["title", "author"], ["Food", "Gordon Ramsay"])
+        self.assertEqual(record1, record2)
+        self.assertNotEqual(record1, record3)
 
-    def testEquals_differentValues(self):
-        r1 = Record(["title", "author"], ["Painting", "Bob Ross"])
-        r2 = Record(["title", "author"], ["Food", "Gordon Ramsay"])
-        self.assertNotEqual(r1, r2)
+    def test_csv(self):
+        record = Record(["title", "author"], ["Painting", "Bob Ross"])
+        self.assertEqual("Painting\tBob Ross", record.__csv__("\t"))
 
-    def testCsv(self):
-        r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertEqual("Painting\tBob Ross", r.__csv__("\t"))
+    def test_repr(self):
+        record = Record(["title"], ["Flyff"])
+        self.assertEqual("Record(['title'], ['Flyff'])", repr(record))
 
-    def testRepr(self):
-        r = Record(["title"], ["Flyff"])
-        self.assertEqual("Record(['title'], ['Flyff'])", repr(r))
-
-    def testStr(self):
-        r = Record(["title", "author"], ["Painting", "Bob Ross"])
-        self.assertEqual("title\tPainting\nautho\tBob Ross", str(r))
+    def test_str(self):
+        record = Record(["title", "author"], ["Painting", "Bob Ross"])
+        self.assertEqual("title\tPainting\nautho\tBob Ross", str(record))

@@ -19,26 +19,26 @@ import unittest
 from autociter.web.webpages import WikipediaArticle, Webpage
 
 
-# pylint: disable=invalid-name, missing-docstring
+# pylint: disable=missing-docstring
 class WikipediaArticleTest(unittest.TestCase):
 
-    def testTitle(self):
-        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
-        self.assertEqual("Chetro_Ketl", a.title)
+    def test_title(self):
+        article = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        self.assertEqual("Chetro_Ketl", article.title)
 
-    def testEditPage(self):
-        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
-        e = Webpage(
+    def test_edit_page(self):
+        article = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        edit_page = Webpage(
             "https://en.wikipedia.org/w/index.php?title=Chetro_Ketl&action=edit"
         )
-        self.assertEqual(e, a.edit_page)
+        self.assertEqual(edit_page, article.edit_page)
 
-    def testRepr(self):
-        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
+    def test_repr(self):
+        article = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
         self.assertEqual(
             "WikipediaArticle('https://en.wikipedia.org/wiki/Chetro_Ketl')",
-            repr(a))
+            repr(article))
 
-    def testStr(self):
-        a = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
-        self.assertEqual("Chetro_Ketl", str(a))
+    def test_str(self):
+        article = WikipediaArticle("https://en.wikipedia.org/wiki/Chetro_Ketl")
+        self.assertEqual("Chetro_Ketl", str(article))

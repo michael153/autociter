@@ -13,16 +13,8 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Define reference objects."""
+"""Define citation objects."""
 import html
-
-
-def clean(string):
-    """Remove or replace unexpected sequences."""
-    for item in ["\n", "[[", "]]", "&nbsp"]:
-        string = string.replace(item, "")
-    string = string.replace("''", "\"")
-    return html.unescape(string)
 
 
 class WikipediaCitation:
@@ -39,6 +31,13 @@ class WikipediaCitation:
         Arguments:
             string: A raw article reference.
         """
+
+        def clean(string):
+            for item in ["\n", "[[", "]]", "&nbsp"]:
+                string = string.replace(item, "")
+            string = string.replace("''", "\"")
+            return html.unescape(string)
+
         self.string, self.data = clean(string), {}
         for attribute in self.ATTRIBUTES:
             self.data[attribute] = self.find(attribute, self.string)

@@ -19,7 +19,7 @@ from autociter.core.citations import WikipediaCitation
 
 
 # pylint: disable=too-few-public-methods
-class Extractor:
+class ElementExtractor:
     """An object that assists with data extraction.
 
     Extractor and its subclasses contain an extract method. The extract method
@@ -53,7 +53,7 @@ class Extractor:
         return [r for r in results if self.validate(r)]
 
 
-class WikipediaCitationExtractor(Extractor):
+class WikipediaCitationExtractor(ElementExtractor):
     """Extracts citations defined in Wikipedia articles.
 
     Wikipedia article citations are denoted by the opening and closing tags
@@ -64,7 +64,7 @@ class WikipediaCitationExtractor(Extractor):
     VARIANTS = ("{{cite", "{{Cite")
 
     def __init__(self, beg="{{cite"):
-        Extractor.__init__(self, beg, "}}")
+        ElementExtractor.__init__(self, beg, "}}")
 
     def extract(self, string):
         """Return references found in an article as Reference objects.
@@ -72,11 +72,11 @@ class WikipediaCitationExtractor(Extractor):
         Arguments:
             string: The source code of an edit-article webpage.
         """
-        citations = Extractor.extract(self, string)
+        citations = ElementExtractor.extract(self, string)
         return [WikipediaCitation(c) for c in citations]
 
 
-class WikipediaArticleExtractor(Extractor):
+class WikipediaArticleExtractor(ElementExtractor):
     """Extracts Wikipedia articles."""
 
     # Special article types
@@ -91,7 +91,7 @@ class WikipediaArticleExtractor(Extractor):
     ]
 
     def __init__(self):
-        Extractor.__init__(self, "<a href=\"/wiki/", "\"")
+        ElementExtractor.__init__(self, "<a href=\"/wiki/", "\"")
 
         def validate(result):
             for prefix in self.IGNORED_NAMESPACES:
@@ -113,7 +113,7 @@ class WikipediaArticleExtractor(Extractor):
             string: The source code of an article. The article can be a catalog
                     of other articles (e.g. the "featured articles" article.)
         """
-        titles = Extractor.extract(self, string)
+        titles = ElementExtractor.extract(self, string)
         return [
             WikipediaArticle("https://en.wikipedia.org/wiki/" + t)
             for t in titles

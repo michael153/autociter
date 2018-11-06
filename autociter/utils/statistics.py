@@ -13,14 +13,11 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Define methods for sampling collections."""
-import random
+"""Define functions for statistical analysis."""
 
 
-def simple_random_sample(collection, size=30):
-    sample = []
-    for _ in range(size):
-        random_index = random.randint(0, len(collection) - 1)
-        random_element = collection[random_index]
-        sample.append(random_element)
-    return sample
+def average(collection, function=lambda element: element):
+    total = 0
+    for element in collection:
+        total += function(element)
+    return total / len(collection)

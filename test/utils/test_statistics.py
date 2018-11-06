@@ -13,14 +13,16 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Define methods for sampling collections."""
-import random
+"""Test methods of the Table object defined in data.storage."""
+import unittest
+
+from autociter.utils.statistics import average
 
 
-def simple_random_sample(collection, size=30):
-    sample = []
-    for _ in range(size):
-        random_index = random.randint(0, len(collection) - 1)
-        random_element = collection[random_index]
-        sample.append(random_element)
-    return sample
+# pylint: disable=missing-docstring,
+class StatisticsTest(unittest.TestCase):
+
+    def test_average(self):
+        collection = range(100)
+        expected_average = sum(collection) / len(collection)
+        self.assertEqual(average(collection), expected_average)
