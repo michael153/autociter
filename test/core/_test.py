@@ -110,7 +110,7 @@ def find_attr_in_scraped_article(info, attributes, num_points=False):
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 INFO = pipeline.get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv',
                                             ['url', 'author'])
-NUM_DATA_POINTS = 20
+NUM_DATA_POINTS = 40
 RES = find_attr_in_scraped_article(INFO, ['author'], NUM_DATA_POINTS)
 
 print("{0}/{1} ({3}%) cases passed, {2} scrapes threw errors".format(

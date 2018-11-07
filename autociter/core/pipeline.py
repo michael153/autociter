@@ -37,6 +37,11 @@ import autociter.data.queries as queries
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 
+ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
+WIKI_FILE_PATH = ASSETS_PATH + '/data/citations.csv'
+BAD_WIKI_LINKS_PATH = ASSETS_PATH + '/data/bad_links.dat'
+ARTICLE_DATA_FILE_PATH = ASSETS_PATH + '/data/article_data.dat'
+
 SUPPORTED_SPECIAL_CHARS = ['-', ':', '.', ' ', '\n', '#']
 ENCODING_COL = list(string.ascii_uppercase) + list(string.ascii_lowercase) + \
                list(string.digits) + SUPPORTED_SPECIAL_CHARS
@@ -87,14 +92,14 @@ def get_text_from_url(url):
             ### Keeps '#' and '\n'
             # Cleans consecutive newlines into just one (e.g ['\n', '\n', 'a'] --> ['\n', 'a'])
             # Cleans all elements containing '#' into just '#' (e.g. '####' --> '#')
-            matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
+            matched_words = re.findall(r'\S+|\n', re.sub(
+                "[^\w#\n]", " ", text))
             words_and_pound_newline = [
-                i for i, j in itertools.zip_longest(matched_words,
-                                                    matched_words[1:]) if i != j
+                i for i, j in itertools.zip_longest(
+                    matched_words, matched_words[1:]) if i != j
             ]
-            words_and_pound_newline = [
-                ('#' if '#' in x else x) for x in words_and_pound_newline
-            ]
+            words_and_pound_newline = [('#' if '#' in x else x)
+                                       for x in words_and_pound_newline]
             words_and_pound_newline = [(x.replace('_', '') if '_' in x else x)
                                        for x in words_and_pound_newline]
             ret = ''
@@ -122,7 +127,7 @@ def get_text_from_url(url):
             return ""
 
 
-def get_wiki_article_links_info(file, args):
+def get_wiki_article_links_info(file, args, num=1000, already_collected=[]):
     """Retrieve article information from wikipedia database Tables, and store
     data into a tupled list
     >>> get_wiki_article_links_info('asserts/data.txt', ['url', 'author'])
@@ -132,7 +137,17 @@ def get_wiki_article_links_info(file, args):
     start_time = time.time()
     table = standardization.std_table(Table(file)).query(
         queries.contains(*args))
-    data = [tuple([rec[a] for a in args]) for rec in table.records]
+    data = []
+    total = 0
+    for rec in table.records:
+        url = rec['url']
+        if url not in already_collected:
+            data.append(tuple([rec[a] for a in args]))
+            total += 1
+        if total == num:
+            break
+
+    # data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
     print("Links successfully collected in {0} seconds\n".format(time.time() -
@@ -181,8 +196,7 @@ def locate_attributes(text, citation_dict):
             data_field = standardization.std_data(val, key)
             if isinstance(data_field, list):
                 pos = [
-                    find_attr_substr(std_text, d_, key)
-                    for d_ in data_field
+                    find_attr_substr(std_text, d_, key) for d_ in data_field
                     if d_ in std_text
                 ]
                 if pos:
@@ -194,22 +208,26 @@ def locate_attributes(text, citation_dict):
     return location_dict
 
 
-def aggregate_data(info, num_points=False):
+def aggregate_data(info):
     """Collect info and manipulate into the proper format to be saved
     as data
     Arguments:
         info, a tuple containing data points, and a label lookup dict
-        num_points, the number of datapoints in info to be used
     """
 
     datapoints, label_lookup = info[0], info[1]
     data = []
-    if num_points:
-        datapoints = datapoints[:num_points]
-        print("Getting {0} points...".format(num_points))
+    try:
+        bad_links = json.load(open(BAD_WIKI_LINKS_PATH))
+    except:
+        bad_links = {}
+    print("Getting {0} points...".format(len(datapoints)))
     for entry in datapoints:
         url = entry[label_lookup['url']]
-        citation_dict = {x: entry[label_lookup[x]] for x in label_lookup.keys()}
+        citation_dict = {
+            x: entry[label_lookup[x]]
+            for x in label_lookup.keys()
+        }
         text = slice_text(get_text_from_url(url))
         if text.strip() != "":
             vec = vectorize_text(text)
@@ -223,6 +241,10 @@ def aggregate_data(info, num_points=False):
                     entry['citation_info'][key] = citation_dict[key]
                 entry['locs'] = locate_attributes(text, citation_dict)
                 data.append(entry)
+        else:
+            bad_links[url] = time.time()
+    with open(BAD_WIKI_LINKS_PATH, 'w') as out:
+        json.dump(bad_links, out, sort_keys=True, indent=4)
     return data
 
 
@@ -243,9 +265,9 @@ def save_data(file_name, data, override_data=True):
 
     try:
         if override_data:
-            saved_dict = json.load(open(file_name))
-        else:
             saved_dict = {}
+        else:
+            saved_dict = json.load(open(file_name))
     except:
         saved_dict = {}
 
@@ -260,10 +282,19 @@ def save_data(file_name, data, override_data=True):
         json.dump(saved_dict, out, sort_keys=True, indent=4)
 
 
+def get_saved_keys(file_name):
+    """Given a file_name, collect the saved data and return a data dict"""
+    if not os.path.isfile(file_name):
+        print(colored(">>> Error: Opening file {0}".format(file_name), "red"))
+        return []
+    saved_dict = json.load(open(file_name))
+    return list(saved_dict.keys())
+
+
 def get_saved_data(file_name):
     """Given a file_name, collect the saved data and return a data dict"""
     if not os.path.isfile(file_name):
-        print(colored(">>> Error: Opening file", "red"))
+        print(colored(">>> Error: Opening file {0}".format(file_name), "red"))
         return {}
     saved_dict = json.load(open(file_name))
     for k in saved_dict.keys():
@@ -326,7 +357,8 @@ def slice_text(text, char_len=600):
         if len(text) < text_len:
             cur_len = len(text)
             remainder = text_len - cur_len
-            return text[:cur_len // 2] + (' ') * remainder + text[cur_len // 2:]
+            return text[:cur_len // 2] + (' ') * remainder + text[cur_len //
+                                                                  2:]
         return text
 
     if len(text) > char_len:
@@ -368,15 +400,30 @@ def unhash_vectorization(hashed_vec, encoding_range=ENCODING_RANGE):
 
 # Data aggregation
 if __name__ == '__main__':
-    ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
-    INFO = get_wiki_article_links_info(ASSETS_PATH + '/data/citations.csv',
-                                       ['url', 'author', 'date'])
+    print(colored("Reading in arguments: {0}".format(sys.argv), "yellow"))
+    OVERRIDE_DATA = True
+    NUM_DATA_POINTS = 1000
+    ALREADY_COLLECTED_KEYS = []
+
     if len(sys.argv) > 1:
         NUM_DATA_POINTS = int(sys.argv[1])
-    else:
-        NUM_DATA_POINTS = 1000
-    DATA = aggregate_data(INFO, NUM_DATA_POINTS)
-    save_data(ASSETS_PATH + '/data/article_data.dat', DATA, override_data=True)
+        if "-append" in sys.argv:
+            OVERRIDE_DATA = False
+            ALREADY_COLLECTED_KEYS = get_saved_keys(
+                ARTICLE_DATA_FILE_PATH) + get_saved_keys(BAD_WIKI_LINKS_PATH)
+            print(
+                colored(
+                    "{0} links already scraped...".format(
+                        len(ALREADY_COLLECTED_KEYS)), "yellow"))
+
+    print("\n")
+    INFO = get_wiki_article_links_info(
+        WIKI_FILE_PATH, ['url', 'author', 'date'],
+        num=NUM_DATA_POINTS,
+        already_collected=ALREADY_COLLECTED_KEYS)
+
+    DATA = aggregate_data(INFO)
+    save_data(ARTICLE_DATA_FILE_PATH, DATA, override_data=OVERRIDE_DATA)
 
 # d = get_saved_data('assets/article_data.dat')
 # print(json.dumps(d, sort_keys=True, indent=4))

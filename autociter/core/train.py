@@ -60,6 +60,7 @@ def build_model(input_length=68, output_dim=600):
     '''Builds a Keras machine learning model
     Takes matrices of size (600, 68)
     Outputs (600,) (Softmax)
+    https://stackoverflow.com/questions/48026129/how-to-build-a-keras-model-with-multidimensional-input-and-output
     '''
     model = Sequential()
     # model.add(Embedding(600, 300, input_length=input_length))
@@ -186,4 +187,4 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
             optimal_model = model
 
 
-train('author', 500)
+train('author', 1000)

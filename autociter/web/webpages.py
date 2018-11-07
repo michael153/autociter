@@ -15,6 +15,7 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Webpage and WikipediaArticle objects."""
 from urllib import request
+from autociter.utils.decorators import timeout
 
 import html2text
 
@@ -59,7 +60,7 @@ class Webpage:
         return self.cache["markdown"]
 
     @property
-    #@timeout(15)
+    @timeout(15)
     def content(self):
         """Retrieve the content of a webpage as markdown.
 
