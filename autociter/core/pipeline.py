@@ -306,7 +306,7 @@ def get_saved_data(file_name):
 # String Vectorization
 
 
-def one_hot(s):
+def one_hot(str_):
     """Converts a string s into a one-hot encoded vector with default dimensions
        of 600 by ENCODING_RANGE.
        The column vector will correspond to:
@@ -315,9 +315,9 @@ def one_hot(s):
             s: A string s that represents the first and last characters of an article / text
                with dimensions (600, 1)
     """
-    mat = [[0 for _ in range(ENCODING_RANGE)] for __ in range(len(s))]
-    for i in range(len(s)):
-        char = s[i]
+    mat = [[0 for _ in range(ENCODING_RANGE)] for __ in range(len(str_))]
+    for i in range(len(str_)):
+        char = str_[i]
         if ord(char) != 10 and not (ord(char) < 127 and ord(char) > 31):
             char = standardization.clean_to_ascii(char)
         if char not in ENCODING_COL:

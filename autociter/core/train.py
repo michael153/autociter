@@ -29,15 +29,17 @@ from sklearn.model_selection import train_test_split
 
 from keras.layers import LSTM, Dense, Dropout
 from keras.models import Sequential
-from keras.layers.embeddings import Embedding
 from keras.callbacks import Callback
 
 import autociter.core.pipeline as pipeline
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 
-class early_stop_by_loss_val(Callback):
 
+class EarlyStopByLossVal(Callback):
+    """Class that terminates training when differential in loss value is
+    underneath a certain threshold (0.000005)
+    """
     def __init__(self, monitor='val_loss', value=0.000005, verbose=0):
         self.monitor = monitor
         self.value = value
@@ -55,7 +57,6 @@ class early_stop_by_loss_val(Callback):
             self.model.stop_training = True
 
 
-#To-do define args
 def build_model(input_length=68, output_dim=600):
     '''Builds a Keras machine learning model
     Takes matrices of size (600, 68)
@@ -65,12 +66,12 @@ def build_model(input_length=68, output_dim=600):
     model = Sequential()
     # model.add(Embedding(600, 300, input_length=input_length))
 
-    model.add(LSTM(600, input_shape=(600, 68), return_sequences=True))
+    model.add(LSTM(600, input_shape=(600, input_length), return_sequences=True))
 
     model.add(Dropout(0.2))
     model.add(LSTM(200))
     model.add(Dropout(0.2))
-    model.add(Dense(600, activation='softmax'))
+    model.add(Dense(output_dim, activation='softmax'))
 
     start = time.time()
 
@@ -113,19 +114,19 @@ def get_x_y(train_data, attribute=""):
 
 
 def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
-    saved_article_data_PATH = ASSETS_PATH + '/data/article_data.dat'
-    saved_article_data = pipeline.get_saved_data(saved_article_data_PATH)
+    saved_article_data_path = ASSETS_PATH + '/data/article_data.dat'
+    saved_article_data = pipeline.get_saved_data(saved_article_data_path)
 
     article_data = list(saved_article_data.values())[:num]
     process_id = int(time.time())
 
     X, Y = get_x_y(article_data, attribute=attribute)
-    
+
     print("X.shape", X.shape)
     print("Y.shape", Y.shape)
 
     callbacks = [
-        early_stop_by_loss_val(monitor='val_loss', value=0.00001, verbose=1),
+        EarlyStopByLossVal(monitor='val_loss', value=0.00001, verbose=1),
     ]
 
     best_m_auc = 0.0
@@ -157,11 +158,12 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
 
             t_probs = model.predict_proba(x_holdout)
 
-            t_auc = sklearn.metrics.roc_auc_score(y_holdout.flatten(), t_probs.flatten())
+            t_auc = sklearn.metrics.roc_auc_score(y_holdout.flatten(),
+                                                  t_probs.flatten())
             print(
                 colored(
-                    'Epoch %d: auc = %f (best=%f)\n' % (epoch, t_auc, best_auc),
-                    "green"))
+                    'Epoch %d: auc = %f (best=%f)\n' % (epoch, t_auc,
+                                                        best_auc), "green"))
             if t_auc > best_auc:
                 best_auc = t_auc
                 best_iter = epoch
@@ -171,7 +173,8 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
 
         probs = model.predict_proba(x_test)
 
-        m_auc = sklearn.metrics.roc_auc_score(y_test.flatten(), probs.flatten())
+        m_auc = sklearn.metrics.roc_auc_score(y_test.flatten(),
+                                              probs.flatten())
         print('\nScore is %f' % m_auc)
         if m_auc > best_m_auc:
             best_m_auc = m_auc
