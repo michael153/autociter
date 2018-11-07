@@ -16,6 +16,7 @@
 """(As of now) Defines methods to convert web-scraped text into one-hot encodings to be passed into a model."""
 
 import os
+import os.path
 import sys
 import time
 
@@ -34,7 +35,6 @@ from keras.callbacks import Callback
 import autociter.core.pipeline as pipeline
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
-
 
 class early_stop_by_loss_val(Callback):
 
@@ -120,7 +120,9 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
     process_id = int(time.time())
 
     X, Y = get_x_y(article_data, attribute=attribute)
-    print(X.shape)
+    
+    print("X.shape", X.shape)
+    print("Y.shape", Y.shape)
 
     callbacks = [
         early_stop_by_loss_val(monitor='val_loss', value=0.00001, verbose=1),
@@ -155,13 +157,7 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
 
             t_probs = model.predict_proba(x_holdout)
 
-            print("t_probs.shape: ", t_probs.shape)
-            print("y_holdout.shape: ", y_holdout.shape)
-
-            # t_probs = t_probs.reshape((600, ))
-            # y_holdout = y_holdout.reshape((600, ))
-
-            t_auc = sklearn.metrics.roc_auc_score(y_holdout, t_probs)
+            t_auc = sklearn.metrics.roc_auc_score(y_holdout.flatten(), t_probs.flatten())
             print(
                 colored(
                     'Epoch %d: auc = %f (best=%f)\n' % (epoch, t_auc, best_auc),
@@ -174,17 +170,12 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
                     break
 
         probs = model.predict_proba(x_test)
-        print("probs.shape: ", probs.shape)
-        print("y_test.shape: ", y_test.shape)
 
-        # probs = probs.reshape((600, ))
-        # y_test = y_test.reshape((600, ))
-
-        m_auc = sklearn.metrics.roc_auc_score(y_test, probs)
+        m_auc = sklearn.metrics.roc_auc_score(y_test.flatten(), probs.flatten())
         print('\nScore is %f' % m_auc)
         if m_auc > best_m_auc:
             best_m_auc = m_auc
             optimal_model = model
 
 
-train('author', 1000)
+train('author', 1500)
