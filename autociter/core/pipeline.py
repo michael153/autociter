@@ -50,20 +50,39 @@ ENCODING_RANGE = len(ENCODING_COL)
 # Data Aggregation
 
 
+def clean_text(text):
+    """Method that cleans a string to only include relevant characters and words"""
+    text = text.replace('\'', '')
+    text = text.replace('\"', '')
+    matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
+    words_and_pound_newline = [
+        i for i, j in itertools.zip_longest(matched_words, matched_words[1:])
+        if i != j
+    ]
+    words_and_pound_newline = [('#' if '#' in x else x)
+                               for x in words_and_pound_newline]
+    words_and_pound_newline = [(x.replace('_', '') if '_' in x else x)
+                               for x in words_and_pound_newline]
+    ret = ''
+    for i in range(len(words_and_pound_newline)):
+        word = words_and_pound_newline[i]
+        if i == 0 or word == '\n' or (i > 0 and
+                                      words_and_pound_newline[i - 1] == '\n'):
+            ret += word
+        else:
+            ret += (" " + word)
+    return ret
+
+
 def get_text_from_url(url, verbose=False):
     """Preliminary method to extract only the relevant article text from a website
-    Alternates:
-    https://github.com/goose3/goose3
-    https://github.com/misja/python-boilerpipe
     Failed cases:
     - https://www.bbc.com/sport/football/22787925, ['Alasdair Lamont']
     - http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=101240', ['William Grosshandler']
     - https://nypost.com/2011/09/19/7-world-trade-center-fully-leased/ (Still gives
       boilerplate info such as 'View author archive', 'email the author', 'etc')
-
     - https://www.nytimes.com/2001/12/20/nyregion/nation-challenged-trade-center-city-had-been-warned-fuel-tank-7-world-trade.html
       (Gives unnecessary '\n' in title)
-
     - https://www.politico.eu/article/monster-at-the-berlaymont-martin-selmayr-european-commission-jean-claude-juncker/
       (HTTP Error 403: Forbidden)
     """
@@ -72,13 +91,12 @@ def get_text_from_url(url, verbose=False):
         try:
             req = requests.get(url, stream=True)
             file = io.BytesIO(req.content)
-            reader = PdfFileReader(file)
+            reader = PdfFileReader(file, strict=False)
             num_page = reader.getNumPages()
             contents = reader.getPage(0).extractText()
             if num_page > 1:
                 contents += reader.getPage(num_page - 1).extractText()
-            scraped_words = re.sub("[^\w]", " ", contents).split()
-            return ' '.join(scraped_words)
+            return clean_text(contents)
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
             print(
@@ -88,36 +106,11 @@ def get_text_from_url(url, verbose=False):
             return ""
     else:
         try:
-            text = Webpage(url).content
-            ### Keeps '#' and '\n'
-            # Cleans consecutive newlines into just one (e.g ['\n', '\n', 'a'] --> ['\n', 'a'])
-            # Cleans all elements containing '#' into just '#' (e.g. '####' --> '#')
-            matched_words = re.findall(r'\S+|\n', re.sub(
-                "[^\w#\n]", " ", text))
-            words_and_pound_newline = [
-                i for i, j in itertools.zip_longest(
-                    matched_words, matched_words[1:]) if i != j
-            ]
-            words_and_pound_newline = [('#' if '#' in x else x)
-                                       for x in words_and_pound_newline]
-            words_and_pound_newline = [(x.replace('_', '') if '_' in x else x)
-                                       for x in words_and_pound_newline]
-            ret = ''
-            for i in range(len(words_and_pound_newline) - 1):
-                word = words_and_pound_newline[i]
-                if i == 0 or word == '\n' or (
-                        i > 0 and words_and_pound_newline[i - 1] == '\n'):
-                    ret += word
-                else:
-                    ret += (" " + word)
+            text = clean_text(Webpage(url).content)
             if verbose:
                 print("Text scrape successfully finished in {0} seconds: {1}".
                       format(time.time() - start_time, url))
-            return ret
-
-            ### Just characters
-            # total_words = re.sub("[^\w]", " ", text).split()
-            # return ' '.join(total_words)
+            return text
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
             print(
