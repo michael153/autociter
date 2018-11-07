@@ -34,17 +34,19 @@ class PipelineTest(unittest.TestCase):
     #     self.assertEqual(all(bools), True)
 
     def test_get_text_from_url_regular(self):
-        urls = open(self.mock_data_dir + "regular_url_list", "r").read().split('\n')
-        bools = []
-        for url in urls:
-            bools.append(pipeline.get_text_from_url(url) != "")
-        self.assertEqual(all(bools), True)
+        with open(self.mock_data_dir + "regular_url_list", "r") as f:
+            urls = f.read().split('\n')
+            bools = []
+            for url in urls:
+                bools.append(pipeline.get_text_from_url(url) != "")
+            self.assertEqual(all(bools), True)
 
     def test_get_wiki_links(self):
-        args_permutations = [['field1', 'field2'],
-                             ['field2', 'field3'],
-                             ['field1', 'field2', 'field3', 'field4']]
-        respective_lengths = [4, 3, 2]
+        args_permutations = [["title", "author", "publisher", "date", "url", "archive-url"],
+                             ["author", "date", "url"],
+                             ["date", "url"],
+                             ["title"]]
+        respective_lengths = [2, 4, 5, 5]
         bools = []
         for i in range(len(args_permutations)):
             args = args_permutations[i]
@@ -54,7 +56,7 @@ class PipelineTest(unittest.TestCase):
                         args
                     )
             bools.append(list(data[1].keys()) == args)
-            # bools.append(len(data[0]) == length)
+            bools.append(len(data[0]) == length)
         self.assertEqual(all(bools), True)
 
     # def test_find_attr_substr(self):

@@ -1,6 +1,7 @@
-field1	field2	field3	field4	url
-Michael Wan	3034012128	tennis	blue	google.com
-Balaji Veeramani	3034001234	tennis	green	google.com
-Nadia Giraffe		tennis	yellow	google.com
-Brian Chin	30312345678		black	google.com
-		3034018875	swimming	blue	google.com
+title	first	last	first1	last1	first2	last2	publisher	date	url	archive-url
+group1	Michael	Wang	Michael	McNabb	Andrew	Kirilov	Google	October	google.com	archive.google.com
+group2	Nadia	Giraffe			Balaji	Veeramani		April	yahoo.com	archive.yahoo.com
+group3			Brian	Chin			Bing		bing.com	archive.bing.com
+group4	Marcus	Pasimio	Keiko	Kamei	Lucas	Bandarker	CCT	November	cct.com	archive.cct.com
+		George	Bush	Hillary	Clinton	Ronald	Reagen	Government	1967	us.gov	archive.us.gov
+group6							NoNames	November	idk.com	archive.idk.com	

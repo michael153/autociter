@@ -50,7 +50,7 @@ ENCODING_RANGE = len(ENCODING_COL)
 # Data Aggregation
 
 
-def get_text_from_url(url):
+def get_text_from_url(url, verbose=False):
     """Preliminary method to extract only the relevant article text from a website
     Alternates:
     https://github.com/goose3/goose3
@@ -110,9 +110,9 @@ def get_text_from_url(url):
                     ret += word
                 else:
                     ret += (" " + word)
-            print(
-                "Text scrape successfully finished in {0} seconds: {1}".format(
-                    time.time() - start_time, url))
+            if verbose:
+                print("Text scrape successfully finished in {0} seconds: {1}".
+                      format(time.time() - start_time, url))
             return ret
 
             ### Just characters
@@ -127,13 +127,17 @@ def get_text_from_url(url):
             return ""
 
 
-def get_wiki_article_links_info(file, args, num=1000, already_collected=[]):
+def get_wiki_article_links_info(file,
+                                args,
+                                num=1000,
+                                already_collected=[],
+                                verbose=False):
     """Retrieve article information from wikipedia database Tables, and store
     data into a tupled list
     >>> get_wiki_article_links_info('asserts/data.txt', ['url', 'author'])
     """
-
-    print("Reading Wikipedia Article Links from...", file)
+    if verbose:
+        print("Reading Wikipedia Article Links from...", file)
     start_time = time.time()
     table = standardization.std_table(Table(file)).query(
         queries.contains(*args))
@@ -150,8 +154,9 @@ def get_wiki_article_links_info(file, args, num=1000, already_collected=[]):
     # data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
-    print("Links successfully collected in {0} seconds\n".format(time.time() -
-                                                                 start_time))
+    if verbose:
+        print("Links successfully collected in {0} seconds\n".format(
+            time.time() - start_time))
     return (data, labels)
 
 
@@ -208,7 +213,7 @@ def locate_attributes(text, citation_dict):
     return location_dict
 
 
-def aggregate_data(info):
+def aggregate_data(info, verbose=False):
     """Collect info and manipulate into the proper format to be saved
     as data
     Arguments:
@@ -221,14 +226,15 @@ def aggregate_data(info):
         bad_links = json.load(open(BAD_WIKI_LINKS_PATH))
     except:
         bad_links = {}
-    print("Getting {0} points...".format(len(datapoints)))
+    if verbose:
+        print("Getting {0} points...".format(len(datapoints)))
     for entry in datapoints:
         url = entry[label_lookup['url']]
         citation_dict = {
             x: entry[label_lookup[x]]
             for x in label_lookup.keys()
         }
-        text = slice_text(get_text_from_url(url))
+        text = slice_text(get_text_from_url(url, verbose))
         if text.strip() != "":
             vec = vectorize_text(text)
             if vec:
@@ -420,9 +426,10 @@ if __name__ == '__main__':
     INFO = get_wiki_article_links_info(
         WIKI_FILE_PATH, ['url', 'author', 'date'],
         num=NUM_DATA_POINTS,
-        already_collected=ALREADY_COLLECTED_KEYS)
+        already_collected=ALREADY_COLLECTED_KEYS,
+        verbose=True)
 
-    DATA = aggregate_data(INFO)
+    DATA = aggregate_data(INFO, verbose=True)
     save_data(ARTICLE_DATA_FILE_PATH, DATA, override_data=OVERRIDE_DATA)
 
 # d = get_saved_data('assets/article_data.dat')
