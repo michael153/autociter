@@ -23,6 +23,7 @@ See spreadsheet
 
 ## G-cloud
 SSH: ```gcloud compute --project "autocitertraining" ssh --zone "us-west1-a" "overpowered-autociter"```
+
 SCP Files: ```gcloud compute scp --recurse * overpowered-autociter:~/[$PWD]```
 
 
