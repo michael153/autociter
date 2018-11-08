@@ -13,7 +13,7 @@
 #   limitations under the License.
 #
 # Author: Michael Wan <m.wan@berkeley.edu>
-"""(As of now) Defines methods to convert web-scraped text into one-hot encodings to be passed into a model."""
+"""Methods to train model."""
 
 import os
 import os.path
@@ -27,6 +27,8 @@ from termcolor import colored
 
 from sklearn.model_selection import train_test_split
 
+import tensorflow as tf
+import keras
 from keras.layers import LSTM, Dense, Dropout
 from keras.models import Sequential
 from keras.callbacks import Callback
@@ -34,6 +36,10 @@ from keras.callbacks import Callback
 import autociter.core.pipeline as pipeline
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
+
+config = tf.ConfigProto(device_count = {'GPU': 1, 'CPU': 4} ) 
+sess = tf.Session(config=config) 
+keras.backend.set_session(sess)
 
 
 class EarlyStopByLossVal(Callback):
@@ -69,7 +75,9 @@ def build_model(input_length=68, output_dim=600):
     model.add(LSTM(600, input_shape=(600, input_length), return_sequences=True))
 
     model.add(Dropout(0.2))
-    model.add(LSTM(200))
+    model.add(LSTM(400, return_sequences=True))
+    model.add(Dropout(0.2))
+    model.add(LSTM(300))
     model.add(Dropout(0.2))
     model.add(Dense(output_dim, activation='softmax'))
 
@@ -116,7 +124,6 @@ def get_x_y(train_data, attribute=""):
 def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
     saved_article_data_path = ASSETS_PATH + '/data/article_data.dat'
     saved_article_data = pipeline.get_saved_data(saved_article_data_path)
-
     article_data = list(saved_article_data.values())[:num]
     process_id = int(time.time())
 
@@ -137,16 +144,13 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
             X, Y, test_size=0.25)
         x_train, x_holdout, y_train, y_holdout = train_test_split(
             x_train, y_train, test_size=0.05)
-
         print("Training on {0} pieces of data...".format(len(x_train)))
         print(
             "Building model... (length={0},num_features={1},len(valid_labels)={2}"
         )
         model = build_model(input_length=68, output_dim=600)
-
         best_iter = -1
         best_auc = 0.0
-
         for epoch in range(max_epoch):
             model.fit(
                 x_train,
@@ -157,7 +161,6 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
                 callbacks=callbacks)
 
             t_probs = model.predict_proba(x_holdout)
-
             t_auc = sklearn.metrics.roc_auc_score(y_holdout.flatten(),
                                                   t_probs.flatten())
             print(
@@ -172,13 +175,21 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
                     break
 
         probs = model.predict_proba(x_test)
-
         m_auc = sklearn.metrics.roc_auc_score(y_test.flatten(),
                                               probs.flatten())
-        print('\nScore is %f' % m_auc)
+        print('\nScore is %f\n' % m_auc)
         if m_auc > best_m_auc:
             best_m_auc = m_auc
             optimal_model = model
 
+    epoch_time = int(time.time())
+    new_dir = ASSETS_PATH + "/ml/{0}".format(epoch_time)
+    os.mkdir(new_dir)
+    optimal_model.save_weights(new_dir + "/weights")
+    with open(new_dir + "/model_json", "w") as out:
+        out.write(optimal_model.to_json())
 
-train('author', 1500)
+    return optimal_model
+
+
+train('author', 3000)
