@@ -17,7 +17,7 @@
 located within a text"""
 
 from autociter.data.storage import Table, Record
-import autociter.data.queries as queries
+from autociter.data.queries import contains
 
 
 def std_table(table):
@@ -36,7 +36,7 @@ def std_table(table):
                 authors.append(author)
         values = []
         for attr in std_fields:
-            if queries.contains(attr)(rec):
+            if contains(attr)(rec):
                 values.append(rec[attr])
             elif attr == 'author':
                 values.append(list(set(authors)))
@@ -55,7 +55,7 @@ def std_data(data, data_type):
     """Standardized text formatting so that words and fields can be properly
     located within a text
     """
-    if data_type == 'author':
+    if data_type == 'author':  #pylint: disable=no-else-return
         return [d.lower().replace('.', '').replace('-', ' ') for d in data]
     elif data_type == 'date':
         return data.lower().replace(',', ' ').replace('-', ' ')
