@@ -1,4 +1,4 @@
-    # Copyright 2018 Balaji Veeramani, Michael Wan
+# Copyright 2018 Balaji Veeramani, Michael Wan
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Webpage and WikipediaArticle objects."""
 from urllib import request
-from autociter.utils.decorators import timeout
 
 import html2text
+
+from autociter.utils.decorators import timeout
+
+from autociter.web.extractors import TitleFirstContentExtractor
 
 
 class Webpage:
@@ -62,54 +65,11 @@ class Webpage:
     @property
     @timeout(15)
     def content(self):
-        """Retrieve the content of a webpage as markdown.
-
-        This method identifies the relevant content in a webpage by searching
-        the markdown for a heading and then returning all of the text after the
-        heading. The algorithm works on the assumption that the title of an
-        article is the first large heading and that all relevant information
-        occurs after the title.
-        """
-        if self.cache.get("content"):
+        """Return the predicted webpage content."""
+        if "content" in self.cache:
             return self.cache["content"]
-        ignored_headers = {"Search", "News", "Home"}
-        ignored_substrings = {"Image\n\n"}
-
-        def find_title(markdown):
-            for heading_size in range(1, 7):
-                search_start = 0
-                while contains_heading(markdown, heading_size, search_start):
-                    heading_start = find_heading(markdown, heading_size,
-                                                 search_start)
-                    heading_text = get_heading_text(markdown, heading_start)
-                    if heading_text not in ignored_headers:
-                        return heading_start
-                    search_start = heading_start + len(heading_text)
-            return -1
-
-        def contains_heading(markdown, size=1, start=0):
-            return find_heading(markdown, size, start) != -1
-
-        def find_heading(markdown, size=1, start=0):
-            for index in range(start, len(markdown)):
-                desired = "\n" + "#" * size + " "
-                if markdown[index:index + len(desired)] == desired:
-                    return index + len("\n")
-            return -1
-
-        def get_heading_text(markdown, heading_start=0):
-            whitespace_index = markdown.find(" ", heading_start)
-            newline_index = markdown.find("\n", whitespace_index)
-            return markdown[whitespace_index + 1:newline_index]
-
-        def clean(content):
-            for substring in ignored_substrings:
-                content = content.replace(substring, "")
-            return content
-
-        start = find_title(self.markdown)
-        content = self.markdown[start:]
-        self.cache["content"] = clean(content)
+        extractor = TitleFirstContentExtractor(webpage=self)
+        self.cache["content"] = extractor.content
         return self.cache["content"]
 
 
