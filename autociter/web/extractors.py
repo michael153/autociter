@@ -13,108 +13,94 @@
 #   limitations under the License.
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
-"""Define Extractor objects."""
-from autociter.web.webpages import WikipediaArticle
-from autociter.core.citations import WikipediaCitation
+"""Define objects that extract information from webpages."""
 
 
-# pylint: disable=too-few-public-methods
-class ElementExtractor:
-    """An object that assists with data extraction.
+class ContentExtractor:  #pylint: disable=too-few-public-methods
+    """An object that assists with extracting content from webpage."""
 
-    Extractor and its subclasses contain an extract method. The extract method
-    takes a string and extracts substrings that are exclusively enclosed by
-    the strings beg and end, which are defined in the __init__ method.
+    REMOVED_SUBSTRINGS = {"Image\n\n"}
 
-    The extract method may return the substrings as-is, or convert the strings
-    to some other object. In either case, a list is returned.
+    def __init__(self, webpage):
+        """Construct extractor and standardize markdown."""
+        self.markdown = webpage.markdown
+        for substring in self.REMOVED_SUBSTRINGS:
+            self.markdown.replace(substring, "")
+        self.markdown = self.markdown.lower()
 
-    >>> e = Extractor("<p>", "</p>")
-    >>> e.extract("<h1>Header</h1><p>Paragraph</p>")
-    ["<p>Paragraph</p>"]
+    @property
+    def content(self):
+        """By default return unchanged markdown."""
+        return self.markdown
+
+
+class TitleFirstContentExtractor(ContentExtractor):
+    """Extract content by finding a title and returning everything after.
+
+    >>> extractor = TitleFirstWebpageContentExtractor("Foo\n# Bar\nBaz")
+    >>> extractor.find_heading_in_markdown(heading_size=1)
+    4
+    >>> extractor.retrieve_heading_from_markdown(heading_start_index=4)
+    '# Bar'
+    >>> extractor.find_title_in_markdown()
+    4
+    >>> extractor.content
+    '# Bar\nBaz'
     """
 
-    def __init__(self, beg, end):
-        self.beg = beg
-        self.end = end
-        # By default, all results are valid.
-        self.validate = lambda result: True
+    IGNORED_HEADINGS = {"Search", "News", "Home"}
+    CONSIDERED_HEADING_SIZES = {1, 2, 3, 4}
 
-    def extract(self, string):
-        """Return valid substrings enclosed by beg and end."""
-        results = []
-        left, right, rest = 0, 0, string
-        while self.beg in rest and self.end in rest:
-            left = string.find(self.beg, right) + len(self.beg)
-            right = string.find(self.end, left) + len(self.end)
-            start, end = left, right - len(self.end)
-            results += [string[start:end]]
-            rest = string[right:]
-        return [r for r in results if self.validate(r)]
+    @property
+    def content(self):
+        """Retrieve the content of a body of text by looking for a title.
 
-
-class WikipediaCitationExtractor(ElementExtractor):
-    """Extracts citations defined in Wikipedia articles.
-
-    Wikipedia article citations are denoted by the opening and closing tags
-    "{{cite" and "}}", respectively. These references can be scraped from
-    the edit-page of any Wikipedia article.
-    """
-
-    VARIANTS = ("{{cite", "{{Cite")
-
-    def __init__(self, beg="{{cite"):
-        ElementExtractor.__init__(self, beg, "}}")
-
-    def extract(self, string):
-        """Return references found in an article as Reference objects.
-
-        Arguments:
-            string: The source code of an edit-article webpage.
+        This method identifies the relevant content by searching the markdown
+        for a heading and then returning all of the text after the heading. The
+        algorithm works on the assumption that the title of an article is the
+        first large heading and that all relevant information occurs after the
+        title.
         """
-        citations = ElementExtractor.extract(self, string)
-        return [WikipediaCitation(c) for c in citations]
+        start_index = self.find_title_in_markdown()
+        return self.markdown[start_index:]
 
+    def find_title_in_markdown(self):
+        """Predict title and return its index."""
+        for heading_size in self.CONSIDERED_HEADING_SIZES:
+            current_index = 0
+            while self.markdown_contains_heading(
+                    heading_size, start=current_index):
+                heading_start_index = self.find_heading_in_markdown(
+                    heading_size, start=current_index)
+                heading = self.retrieve_heading_from_markdown(
+                    heading_start_index)
+                if heading not in self.IGNORED_HEADINGS:
+                    return heading_start_index
+                heading_prefix = "\n" + "#" * heading_size + " "
+                current_index = heading_start_index + len(heading_prefix) + len(
+                    heading)
+        return -1
 
-class WikipediaArticleExtractor(ElementExtractor):
-    """Extracts Wikipedia articles."""
+    def markdown_contains_heading(self, heading_size, start=0):
+        """Return true if the markdown contains a heading of the given size."""
+        heading_prefix = "\n" + "#" * heading_size + " "
+        for index in range(start, len(self.markdown)):
+            substring = self.markdown[index:index + len(heading_prefix)]
+            if substring == heading_prefix:
+                return True
+        return False
 
-    # Special article types
-    IGNORED_NAMESPACES = [
-        "User:", "Wikipedia:", "File:", "MediaWiki:", "Template:", "Help:",
-        "Category:", "Portal:", "Book:", "Draft:", "TimedText:", "Module:",
-        "Gadget:", "Special:", "Main_Page", "Talk:", "User_talk:",
-        "Wikipedia_talk:", "File_talk:", "MediaWiki_talk:", "Template_talk:",
-        "Help_talk:", "Category_talk:", "Portal_talk:", "Book_talk:",
-        "Draft_talk:", "TimedText_talk:", "Module_talk:", "Gadget_talk:",
-        "Gadget_definition_talk:", "Media:"
-    ]
+    def find_heading_in_markdown(self, heading_size, start=0):
+        """Return index of the first heading of the given size."""
+        heading_prefix = "\n" + "#" * heading_size + " "
+        for index in range(start, len(self.markdown)):
+            substring = self.markdown[index:index + len(heading_prefix)]
+            if substring == heading_prefix:
+                return index + len("\n")
+        return -1
 
-    def __init__(self):
-        ElementExtractor.__init__(self, "<a href=\"/wiki/", "\"")
-
-        def validate(result):
-            for prefix in self.IGNORED_NAMESPACES:
-                if prefix in result:
-                    return False
-            return True
-
-        # A result is invalid if the result represents a special article.
-        self.validate = validate
-
-    def extract(self, string):
-        """Return articles found in a article as WikipediaArticle objects.
-
-        The extract method searches an article's source code for references to
-        other Wikipedia articles and returns them as WikipediaArticle objects. Special
-        articles (e.g. Wikipedia help articles) are excluded.
-
-        Arguments:
-            string: The source code of an article. The article can be a catalog
-                    of other articles (e.g. the "featured articles" article.)
-        """
-        titles = ElementExtractor.extract(self, string)
-        return [
-            WikipediaArticle("https://en.wikipedia.org/wiki/" + t)
-            for t in titles
-        ]
+    def retrieve_heading_from_markdown(self, heading_start_index):
+        """Return a heading located at the given index."""
+        assert self.markdown[heading_start_index] == "#", "Invalid start index"
+        newline_index = self.markdown.find("\n", heading_start_index)
+        return self.markdown[heading_start_index:newline_index]

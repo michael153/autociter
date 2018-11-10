@@ -16,13 +16,13 @@
 """Define Crawler objects."""
 from urllib import error
 
-from autociter.web.extractors import WikipediaCitationExtractor, WikipediaArticleExtractor
+from autociter.wikipedia.extractors import (WikipediaCitationExtractor,
+                                            WikipediaArticleExtractor)
 from autociter.web.webpages import Webpage, WikipediaArticle
 
 
-# pylint: disable=too-few-public-methods
-class Crawler:
-    """Scrapes information from webpages.
+class WikipediaCrawler:  # pylint: disable=too-few-public-methods
+    """Scrapes information from Wikipedia webpages.
 
     Crawlers are used to collect data from webpages. The type of data of
     collected depends on which extractors are passed in.
@@ -43,7 +43,6 @@ class Crawler:
         Returns:
             Scraped data if no errors occurred, otherwise an empty list.
         """
-        assert isinstance(webpage, Webpage), "Expected Webpage object."
         try:
             return self._scrape(webpage)
         except (error.HTTPError, error.URLError, OSError):
@@ -61,7 +60,7 @@ class Crawler:
         return data
 
 
-class WikipediaArticleCrawler(Crawler):
+class WikipediaArticleCrawler(WikipediaCrawler):
     """Scrapes references from Wikipedia articles."""
 
     def __init__(self):
@@ -69,23 +68,21 @@ class WikipediaArticleCrawler(Crawler):
             WikipediaCitationExtractor(variant)
             for variant in WikipediaCitationExtractor.VARIANTS
         ]
-        Crawler.__init__(self, extractors)
+        WikipediaCrawler.__init__(self, extractors)
 
     def scrape(self, webpage):
         """Return references found in an article as Reference objects.
 
         Arguments:
-            webpage: An WikipediaArticle object (or one of its subclasses)
+            webpage: A WikipediaArticle object (or one of its subclasses)
 
         Returns:
-            A list of Reference objects.
+            A list of WikipediaCitation objects.
         """
-        assert isinstance(webpage,
-                          WikipediaArticle), "Expected WikipediaArticle object."
-        return Crawler.scrape(self, webpage.edit)
+        return WikipediaCrawler.scrape(self, webpage.edit)
 
 
-class WikipediaArticleListCrawler(Crawler):
+class WikipediaArticleListCrawler(WikipediaCrawler):
     """Scrapes Wikipedia articles from Wikipedia articles.
 
     Some Wikipedia articles are lists of other articles (e.g the list of
@@ -94,17 +91,15 @@ class WikipediaArticleListCrawler(Crawler):
     """
 
     def __init__(self):
-        Crawler.__init__(self, WikipediaArticleExtractor())
+        WikipediaCrawler.__init__(self, WikipediaArticleExtractor())
 
     def scrape(self, webpage):
         """Return articles found in an article as WikipediaArticle objects.
 
         Arguments:
-            webpage: An WikipediaArticle object (or one of its subclasses)
+            webpage: A WikipediaArticle object (or one of its subclasses)
 
         Returns:
             A list of WikipediaArticle objects.
         """
-        assert isinstance(webpage,
-                          WikipediaArticle), "Expected WikipediaArticle object."
-        return Crawler.scrape(self, webpage)
+        return WikipediaCrawler.scrape(self, webpage)
