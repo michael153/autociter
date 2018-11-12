@@ -35,6 +35,14 @@ def similarity(string1, string2):
     return SequenceMatcher(None, string1, string2).ratio()
 
 
+def contains(string, substring):
+    for index in range(len(string)):
+        current = string[index:index + len(substring)]
+        if similarity(current, substring) > 0.7:
+            return True
+    return False
+
+
 def data_preservation_accuracy(sample):
     """Return the average correctness of webpage content against a sample.
 
@@ -46,14 +54,6 @@ def data_preservation_accuracy(sample):
     Arguments:
         sample: A Table instance of sample data
     """
-
-    def contains(string, substring):
-        for index in range(len(string)):
-            current = string[index:index + len(substring)]
-            if similarity(current, substring) > 0.7:
-                return True
-        return False
-
     accuracies = []
     for record in sample:
         webpage = Webpage(record["url"])
@@ -71,7 +71,6 @@ def data_preservation_accuracy(sample):
         }
         num_values_expected = len(expected_values)
         num_values_found = len(values_in_content)
-        print(num_values_found, num_values_expected, "\n")
         accuracies.append(num_values_found / num_values_expected)
     return numpy.average(accuracies)
 
