@@ -50,7 +50,7 @@ def data_preservation_accuracy(sample):
     def contains(string, substring):
         for index in range(len(string)):
             current = string[index:index + len(substring)]
-            if similarity(current, substring) > 0.9:
+            if similarity(current, substring) > 0.7:
                 return True
         return False
 
@@ -71,6 +71,7 @@ def data_preservation_accuracy(sample):
         }
         num_values_expected = len(expected_values)
         num_values_found = len(values_in_content)
+        print(num_values_found, num_values_expected, "\n")
         accuracies.append(num_values_found / num_values_expected)
     return numpy.average(accuracies)
 
@@ -94,10 +95,10 @@ def content_start_accuracy(sample):
     for record in sample:
         webpage = Webpage(record["url"])
         expected_title = record["title"]
-        predicted_title = retrieve_title_from_content(webpage.content)
-        similarity = similarity(expected_title, predicted_title)
+        predicted_title = retrieve_title_from_content(webpage.content, len(expected_title))
+        print(predicted_title, expected_title, sep="\n")
         # If the predicted and actual titles are similar, then the content
         # probably started at the right place.
-        if similarity > 0.7:
+        if similarity(expected_title, predicted_title) > 0.7:
             num_valid += 1
-    return numpy.average(accuracies)
+    return numpy.average(num_valid / len(sample))

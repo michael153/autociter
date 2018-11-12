@@ -18,7 +18,7 @@ from urllib import request
 
 import html2text
 
-from timeout_decorator import timeout
+# from timeout_decorator import timeout
 
 from autociter.web.extractors import TitleFirstContentExtractor
 
@@ -63,7 +63,7 @@ class Webpage:
         return self.cache["markdown"]
 
     @property
-    @timeout(15)
+    # @timeout(15)
     def content(self):
         """Return the predicted webpage content."""
         if "content" in self.cache:
