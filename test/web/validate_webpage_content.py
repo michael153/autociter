@@ -16,11 +16,10 @@
 """Define functions for verifying the accuracy of content extractors."""
 from difflib import SequenceMatcher
 
-import assets
+import numpy
 
+import assets
 from autociter.data.storage import Table
-from autociter.data.standardization import clean_text
-from autociter.utils.statistics import average
 from autociter.web.webpages import Webpage
 from autociter.core.pipeline import slice_text
 
@@ -51,7 +50,7 @@ def data_preservation_accuracy(sample):
     def contains(string, substring):
         for index in range(len(string)):
             current = string[index:index + len(substring)]
-            if similarity(current, substring) > 0.975:
+            if similarity(current, substring) > 0.9:
                 return True
         return False
 
@@ -73,7 +72,7 @@ def data_preservation_accuracy(sample):
         num_values_expected = len(expected_values)
         num_values_found = len(values_in_content)
         accuracies.append(num_values_found / num_values_expected)
-    return average(accuracies)
+    return numpy.average(accuracies)
 
 
 def content_start_accuracy(sample):
@@ -101,4 +100,4 @@ def content_start_accuracy(sample):
         # probably started at the right place.
         if similarity > 0.7:
             num_valid += 1
-    return average(accuracies)
+    return numpy.average(accuracies)

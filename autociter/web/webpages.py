@@ -18,7 +18,7 @@ from urllib import request
 
 import html2text
 
-from autociter.utils.decorators import timeout
+from timeout_decorator import timeout
 
 from autociter.web.extractors import TitleFirstContentExtractor
 

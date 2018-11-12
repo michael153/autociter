@@ -30,7 +30,7 @@ import requests
 
 from PyPDF2 import PdfFileReader
 from termcolor import colored
-import timeout_decorator
+from timeout_decorator import timeout
 
 from dateparser.search import search_dates
 
