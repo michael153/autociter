@@ -30,11 +30,12 @@ import requests
 
 from PyPDF2 import PdfFileReader
 from termcolor import colored
+import timeout_decorator
+
 from dateparser.search import search_dates
 
 import autociter.data.standardization as standardization
 import autociter.data.queries as queries
-from autociter.utils.decorators import timeout
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 
