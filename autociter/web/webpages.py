@@ -15,13 +15,16 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define Webpage and WikipediaArticle objects."""
 from urllib import request
+from urllib.request import Request
 
 import html2text
+from fake_useragent import UserAgent
 
-# from timeout_decorator import timeout
+from timeout_decorator import timeout
 
 from autociter.web.extractors import TitleFirstContentExtractor
 
+ua = UserAgent()
 
 class Webpage:
     """A generic webpage."""
@@ -42,11 +45,13 @@ class Webpage:
         return self.url == other.url
 
     @property
+    @timeout(15)
     def source(self):
         """Return the source code of a webpage."""
         if "source" in self.cache:
             return self.cache["source"]
-        client = request.urlopen(self.url)
+        headers = ua.random
+        client = request.urlopen(Request(self.url, headers={'User-Agent': headers}))
         bytecode = client.read()
         self.cache["source"] = bytecode.decode("utf-8", "replace")
         return self.cache["source"]
@@ -63,7 +68,7 @@ class Webpage:
         return self.cache["markdown"]
 
     @property
-    # @timeout(15)
+    @timeout(15)
     def content(self):
         """Return the predicted webpage content."""
         if "content" in self.cache:
