@@ -15,11 +15,22 @@
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define objects that extract information from webpages."""
 from difflib import SequenceMatcher
+from html import unescape
 
 
 def similarity(string1, string2):
     """Return a score representing the similartiy of two strings."""
     return SequenceMatcher(None, string1, string2).ratio()
+
+
+def remove_scripts(html):
+    while "<script" in html:
+        open_tag_start = html.find("<script")
+        open_tag_end = html.find("> ", open_tag_start)
+        close_tag_start = html.find("<", open_tag_end)
+        close_tag_end = html.find(">", close_tag_start)
+        html = html[:open_tag_start] + html[close_tag_end + 1:]
+    return html
 
 
 class ContentExtractor:  #pylint: disable=too-few-public-methods
@@ -29,7 +40,7 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
 
     def __init__(self, webpage):
         """Construct extractor and standardize markdown."""
-        self.source = webpage.source
+        self.source = remove_scripts(webpage.source)
         self.markdown = webpage.markdown
         for substring in self.REMOVED_SUBSTRINGS:
             self.markdown.replace(substring, "")
@@ -40,6 +51,8 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
     def title(self):
         """Return the title as defined by the <title> tag."""
         open_tag_start = self.source.find("<title")
+        if open_tag_start == -1:
+            return ""
         open_tag_end = self.source.find(">", open_tag_start)
         close_tag_start = self.source.find("<", open_tag_end)
         return self.source[open_tag_end + 1: close_tag_start]
