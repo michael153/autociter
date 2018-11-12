@@ -75,11 +75,12 @@ def build_model(input_length=68, output_dim=600):
     model.add(LSTM(600, input_shape=(600, input_length), return_sequences=True))
 
     model.add(Dropout(0.2))
-    model.add(LSTM(400, return_sequences=True))
+    model.add(LSTM(600, return_sequences=True))
     model.add(Dropout(0.2))
-    model.add(LSTM(300))
+    model.add(LSTM(400))
     model.add(Dropout(0.2))
-    model.add(Dense(output_dim, activation='softmax'))
+    model.add(Dense(400, activation='relu'))
+    model.add(Dense(output_dim, activation='sigmoid'))
 
     start = time.time()
 
@@ -121,7 +122,7 @@ def get_x_y(train_data, attribute=""):
     return np.array(x), np.array(y)
 
 
-def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
+def train(attribute, num, max_epoch=250, nfolds=10, batch_size=128):
     saved_article_data_path = ASSETS_PATH + '/data/article_data.dat'
     saved_article_data = pipeline.get_saved_data(saved_article_data_path)
     article_data = list(saved_article_data.values())[:num]
@@ -156,8 +157,8 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
                 x_train,
                 y_train,
                 batch_size=batch_size,
-                epochs=1,
-                validation_split=0.05,
+                epochs=10,
+                validation_split=0.2,
                 callbacks=callbacks)
 
             t_probs = model.predict_proba(x_holdout)
@@ -171,7 +172,7 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
                 best_auc = t_auc
                 best_iter = epoch
             else:
-                if (epoch - best_iter) >= 2:
+                if (epoch - best_iter) >= 3:
                     break
 
         probs = model.predict_proba(x_test)
@@ -192,4 +193,4 @@ def train(attribute, num, max_epoch=50, nfolds=10, batch_size=128):
     return optimal_model
 
 
-train('author', 3000)
+train('author', 6000)
