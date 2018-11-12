@@ -34,6 +34,7 @@ from dateparser.search import search_dates
 
 import autociter.data.standardization as standardization
 import autociter.data.queries as queries
+from autociter.utils.decorators import timeout
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 
@@ -73,7 +74,7 @@ def clean_text(text):
             ret += (" " + word)
     return ret
 
-
+@timeout(15)
 def get_text_from_url(url, verbose=False):
     """Preliminary method to extract only the relevant article text from a website
     Failed cases:
@@ -227,21 +228,25 @@ def aggregate_data(info, verbose=False):
             x: entry[label_lookup[x]]
             for x in label_lookup.keys()
         }
-        text = slice_text(get_text_from_url(url, verbose))
-        if text.strip() != "":
-            vec = vectorize_text(text)
-            if vec:
-                entry = {
-                    'url': url,
-                    'citation_info': {},
-                    'article_one_hot': str(hash_vectorization(vec))
-                }
-                for key in citation_dict.keys():
-                    entry['citation_info'][key] = citation_dict[key]
-                entry['locs'] = locate_attributes(text, citation_dict)
-                data.append(entry)
-        else:
-            bad_links[url] = time.time()
+        try:
+            text = slice_text(get_text_from_url(url, verbose))
+            if text.strip() != "":
+                vec = vectorize_text(text)
+                if vec:
+                    entry = {
+                        'url': url,
+                        'citation_info': {},
+                        'article_one_hot': str(hash_vectorization(vec))
+                    }
+                    for key in citation_dict.keys():
+                        entry['citation_info'][key] = citation_dict[key]
+                    entry['locs'] = locate_attributes(text, citation_dict)
+                    data.append(entry)
+            else:
+                bad_links[url] = time.time()
+        except Exception as e:
+            func_name = inspect.getframeinfo(inspect.currentframe()).function
+            print(colored(">>> Error in {0}: {1}".format(func_name, e), "red"))
     with open(BAD_WIKI_LINKS_PATH, 'w') as out:
         json.dump(bad_links, out, sort_keys=True, indent=4)
     return data
