@@ -94,7 +94,11 @@ def content_start_accuracy(sample):
     for record in sample:
         webpage = Webpage(record["url"])
         expected_title = record["title"]
-        predicted_title = retrieve_title_from_content(webpage.content, len(expected_title))
+        try:
+            predicted_title = retrieve_title_from_content(webpage.content,
+                                                          len(expected_title))
+        except Exception as e:
+            predicted_title = ""
         print(predicted_title, expected_title, sep="\n")
         # If the predicted and actual titles are similar, then the content
         # probably started at the right place.
