@@ -45,9 +45,9 @@ def find_attr_substr(text, word, category):
                     if reference_date.date() == match.date():
                         index = text.find(original_text)
                         return (index, index + len(original_text))
-        except Exception as e:
+        except Exception as error:  # pylint: disable=broad-except
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored(">>> Error in {0}: {1}".format(func_name, e), "red"))
+            print(colored(">>> Error in {0}: {1}".format(func_name, error), "red"))
             return (-1, -1)
     else:
         index = text.find(word)
@@ -56,7 +56,7 @@ def find_attr_substr(text, word, category):
     return (-1, -1)
 
 
-def find_attr_in_scraped_article(info, attributes, num_points=False):
+def find_attr_in_scraped_article(info, attributes, num_points=False):  # pylint: disable=too-many-locals
     """For a list of url, author pairs, find the success rate of scraping the url and
     finding the authors within the text
     """
