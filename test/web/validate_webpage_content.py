@@ -16,11 +16,10 @@
 """Define functions for verifying the accuracy of content extractors."""
 from difflib import SequenceMatcher
 
-import assets
+import numpy
 
+import assets
 from autociter.data.storage import Table
-from autociter.data.standardization import std_text
-from autociter.utils.statistics import average
 from autociter.web.webpages import Webpage
 from autociter.core.pipeline import slice_text
 
@@ -29,6 +28,19 @@ IGNORED_FIELDS = {"url", "date"}
 CONSIDERED_FIELDS = [
     field for field in SAMPLE_DATA.fields if field not in IGNORED_FIELDS
 ]
+
+
+def similarity(string1, string2):
+    """Return a score representing the similartiy of two strings."""
+    return SequenceMatcher(None, string1, string2).ratio()
+
+
+def contains(string, substring):
+    for index in range(len(string)):
+        current = string[index:index + len(substring)]
+        if similarity(current, substring) > 0.7:
+            return True
+    return False
 
 
 def data_preservation_accuracy(sample):
@@ -50,21 +62,21 @@ def data_preservation_accuracy(sample):
         }
         values_in_source = {
             value for value in defined_values
-            if value in std_text(webpage.source)
+            if contains(webpage.source, value)
         }
         expected_values = defined_values.intersection(values_in_source)
         values_in_content = {
             value for value in expected_values
-            if value in std_text(slice_text(webpage.content))
+            if contains(webpage.content, value)
         }
         num_values_expected = len(expected_values)
         num_values_found = len(values_in_content)
         accuracies.append(num_values_found / num_values_expected)
-    return average(accuracies)
+    return numpy.average(accuracies)
 
 
-def title_recognition_accuracy(sample):
-    """Return average accuracy at identifying webpage titles.
+def content_start_accuracy(sample):
+    """Return average accuracy at determining where content starts.
 
     This function compares predicted webpage titles, as they are defined by
     Webpage.content, against the actual webpage titles.
@@ -73,31 +85,19 @@ def title_recognition_accuracy(sample):
         sample: A Table instance of sample data
     """
 
-    def similarity(string1, string2):
-        """Return a score representing the similartiy of two strings."""
-        return SequenceMatcher(None, string1, string2).ratio()
-
-    def retrieve_title_from_content(content):
-        """Retrieve the predicted title from a webpage's content.
-
-        This function assumes that the title is in a heading at the top of
-        content, and that content is formatted in markdown.
-
-        Arguments:
-            content: A string returned by a webpage's content property
-
-        >>> retrieve_title_from_content("# Foo Bar \nBaz")
-        'Foo Bar'
-        """
+    def retrieve_title_from_content(content, len_title):
         whitespace_index = content.find(" ")
-        newline_index = content.find("\n", whitespace_index)
-        return content[whitespace_index + 1:newline_index].rstrip()
+        title = content[whitespace_index + 1:whitespace_index + 1 + len_title]
+        return title.rstrip().lstrip()
 
-    accuracies = []
+    num_valid = 0
     for record in sample:
         webpage = Webpage(record["url"])
         expected_title = record["title"]
-        predicted_title = retrieve_title_from_content(webpage.content)
-        print(similarity(expected_title, predicted_title), "\n", expected_title, "\n", predicted_title)
-        accuracies.append(similarity(expected_title, predicted_title))
-    return average(accuracies)
+        predicted_title = retrieve_title_from_content(webpage.content, len(expected_title))
+        print(predicted_title, expected_title, sep="\n")
+        # If the predicted and actual titles are similar, then the content
+        # probably started at the right place.
+        if similarity(expected_title, predicted_title) > 0.7:
+            num_valid += 1
+    return numpy.average(num_valid / len(sample))

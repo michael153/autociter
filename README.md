@@ -12,6 +12,7 @@ Uses NLP to accurately extract citation information from any online website
 - PyPDF2
 - scikit-learn
 - termcolor
+- timeoutdecorator
 - tensorflow
 ```pip install dateparser html2text keras PyPDF2 termcolor```
 
