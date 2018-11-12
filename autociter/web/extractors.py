@@ -26,8 +26,18 @@ def similarity(string1, string2):
 def remove_scripts(html):
     while "<script" in html:
         open_tag_start = html.find("<script")
-        open_tag_end = html.find("> ", open_tag_start)
-        close_tag_start = html.find("<", open_tag_end)
+        open_tag_end = html.find(">", open_tag_start)
+        close_tag_start = html.find("</script", open_tag_end)
+        close_tag_end = html.find(">", close_tag_start)
+        html = html[:open_tag_start] + html[close_tag_end + 1:]
+    return html
+
+
+def remove_style(html):
+    while "<style" in html:
+        open_tag_start = html.find("<style")
+        open_tag_end = html.find(">", open_tag_start)
+        close_tag_start = html.find("</style", open_tag_end)
         close_tag_end = html.find(">", close_tag_start)
         html = html[:open_tag_start] + html[close_tag_end + 1:]
     return html
@@ -40,7 +50,13 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
 
     def __init__(self, webpage):
         """Construct extractor and standardize markdown."""
-        self.source = remove_scripts(webpage.source)
+
+        def clean(source):
+            source = remove_style(source)
+            source = remove_scripts(source)
+            return source
+
+        self.source = clean(webpage.source)
         self.markdown = webpage.markdown
         for substring in self.REMOVED_SUBSTRINGS:
             self.markdown.replace(substring, "")
@@ -56,6 +72,16 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
         open_tag_end = self.source.find(">", open_tag_start)
         close_tag_start = self.source.find("<", open_tag_end)
         return self.source[open_tag_end + 1: close_tag_start]
+
+    @property
+    def open_graph_title(self):
+        """Return the title as defined by the <title> tag."""
+        open_tag_start = self.source.find("og:title")
+        if open_tag_start == -1:
+            return ""
+        content_start = self.source.find("content=", open_tag_start) + len("content=\"")
+        content_end = self.source.find("\"", content_start)
+        return self.source[content_start:content_end]
 
     @property
     def content(self):
@@ -102,7 +128,7 @@ class TitleFirstContentExtractor(ContentExtractor):
             title = heading[whitespace_index + 1:newline_index]
             return title.rstrip().lstrip()
 
-        cached_title = self.title
+        cached_title = self.open_graph_title or self.title
         candidates = {}
         for heading_size in self.CONSIDERED_HEADING_SIZES:
             current_index = 0
@@ -123,7 +149,11 @@ class TitleFirstContentExtractor(ContentExtractor):
                 heading_prefix = "\n" + "#" * heading_size + " "
                 current_index = heading_start_index + len(heading_prefix) + len(
                     heading)
-        return max(candidates, key=lambda key: candidates[key])
+        if not candidates:
+            return 0
+        winner = max(candidates, key=lambda key: candidates[key])
+
+        return winner if candidates[winner] > 0.2 else 0
 
     def markdown_contains_heading(self, heading_size, start=0):
         """Return true if the markdown contains a heading of the given size."""
