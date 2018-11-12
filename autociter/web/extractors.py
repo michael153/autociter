@@ -14,6 +14,12 @@
 #
 # Author: Balaji Veeramani <bveeramani@berkeley.edu>
 """Define objects that extract information from webpages."""
+from difflib import SequenceMatcher
+
+
+def similarity(string1, string2):
+    """Return a score representing the similartiy of two strings."""
+    return SequenceMatcher(None, string1, string2).ratio()
 
 
 class ContentExtractor:  #pylint: disable=too-few-public-methods
@@ -23,10 +29,20 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
 
     def __init__(self, webpage):
         """Construct extractor and standardize markdown."""
+        self.source = webpage.source
         self.markdown = webpage.markdown
         for substring in self.REMOVED_SUBSTRINGS:
             self.markdown.replace(substring, "")
         self.markdown = self.markdown.lower()
+
+
+    @property
+    def title(self):
+        """Return the title as defined by the <title> tag."""
+        open_tag_start = self.source.find("<title")
+        open_tag_end = self.source.find(">", open_tag_start)
+        close_tag_start = self.source.find("<", open_tag_end)
+        return self.source[open_tag_end + 1: close_tag_start]
 
     @property
     def content(self):
@@ -48,7 +64,7 @@ class TitleFirstContentExtractor(ContentExtractor):
     '# Bar\nBaz'
     """
 
-    IGNORED_HEADINGS = {"Search", "News", "Home"}
+    IGNORED_HEADINGS = {"", "Search", "News", "Home"}
     CONSIDERED_HEADING_SIZES = {1, 2, 3, 4}
 
     @property
@@ -66,6 +82,15 @@ class TitleFirstContentExtractor(ContentExtractor):
 
     def find_title_in_markdown(self):
         """Predict title and return its index."""
+
+        def retrieve_title_from_heading(heading):
+            whitespace_index = heading.find(" ")
+            newline_index = heading.find("\n")
+            title = heading[whitespace_index + 1:newline_index]
+            return title.rstrip().lstrip()
+
+        cached_title = self.title
+        candidates = {}
         for heading_size in self.CONSIDERED_HEADING_SIZES:
             current_index = 0
             while self.markdown_contains_heading(
@@ -74,12 +99,18 @@ class TitleFirstContentExtractor(ContentExtractor):
                     heading_size, start=current_index)
                 heading = self.retrieve_heading_from_markdown(
                     heading_start_index)
-                if heading not in self.IGNORED_HEADINGS:
+                predicted_title = retrieve_title_from_heading(heading)
+                if cached_title:
+                    score = similarity(predicted_title, cached_title)
+                    if score > 0.95:
+                        return heading_start_index
+                    candidates[heading_start_index] = score
+                elif predicted_title not in self.IGNORED_HEADINGS:
                     return heading_start_index
                 heading_prefix = "\n" + "#" * heading_size + " "
                 current_index = heading_start_index + len(heading_prefix) + len(
                     heading)
-        return -1
+        return max(candidates, key=lambda key: candidates[key])
 
     def markdown_contains_heading(self, heading_size, start=0):
         """Return true if the markdown contains a heading of the given size."""
