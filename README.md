@@ -13,6 +13,7 @@ Uses NLP to accurately extract citation information from any online website
 - scikit-learn
 - termcolor
 - tensorflow
+```pip install dateparser html2text keras PyPDF2 termcolor```
 
 ## Open-Ended Questions Regarding Implementation / ML Model
 - Would preserving capitalization help the model? (E.g names usually are capitalized or all-caps, titles are usually capitalized)
@@ -21,6 +22,8 @@ Uses NLP to accurately extract citation information from any online website
 SSH onto Instance: ```gcloud compute --project "autocitertraining" ssh --zone "us-west1-a" "overpowered-autociter"```
 
 SCP Files to Instance: ```gcloud compute scp --recurse * overpowered-autociter:~/[$PWD]```
+
+SCP Remote Instance Files to Local: ```gcloud compute scp --recurse overpowered-autociter:~/[$PWD]/assets/files/ml assets/files/ml```
 
 ## To-do
 [Project Guideline Doc](https://docs.google.com/document/d/1TixeELMOJiErqlB_TrHYywdB45SXnI5XN9w0SOLU6vg/edit?usp=sharing)
