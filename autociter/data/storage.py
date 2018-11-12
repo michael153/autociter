@@ -181,7 +181,11 @@ class Record:
             values: A list representing the value of each attribute.
         """
         self.fields, self.values = fields, values
-        self.data = dict(zip(fields, values))
+
+    @property
+    def data(self):
+        """A dictionary representing a record's data."""
+        return dict(zip(self.fields, self.values))
 
     def __getitem__(self, field):
         return self.data.get(field, "")
