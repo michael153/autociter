@@ -104,7 +104,7 @@ def content_start_accuracy(sample):
         webpage = Webpage(record["url"])
         expected_title = record["title"]
         try:
-            predicted_title = retrieve_title_from_content(pipeline.clean_text(webpage.content),
+            predicted_title = retrieve_title_from_content(standardization.standardize(webpage.content, "text"),
                                                           len(expected_title))
             sim = similarity(expected_title.title(), predicted_title.title())
             print(record["url"], predicted_title.title(), expected_title.title(), sim, sep="\n")
