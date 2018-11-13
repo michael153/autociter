@@ -14,6 +14,7 @@ Uses NLP to accurately extract citation information from any online website
 - termcolor
 - timeoutdecorator
 - tensorflow
+- fake-useragent
 ```pip install dateparser html2text keras PyPDF2 termcolor```
 
 ## Open-Ended Questions Regarding Implementation / ML Model
