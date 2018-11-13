@@ -26,6 +26,31 @@ from autociter.data.storage import Table, Record
 from autociter.data.queries import contains
 
 
+def std_markdown(markdown):
+    """Remove the substring 'Image\n\n' from markdown."""
+    for substring in {"Image\n\n"}:
+        markdown = markdown.replace(substring, "")
+    return markdown
+
+
+def std_html(html):
+    """Remove script and style elements from HTML."""
+    html = remove_elements(html, "script")
+    html = remove_elements(html, "style")
+    return html
+
+
+def remove_elements(html, tag_name):
+    """Remove elements of a given type from HTML."""
+    while "<" + tag_name in html:
+        open_tag_start = html.find("<" + tag_name)
+        open_tag_end = html.find(">", open_tag_start)
+        close_tag_start = html.find("</" + tag_name, open_tag_end)
+        close_tag_end = html.find(">", close_tag_start)
+        html = html[:open_tag_start] + html[close_tag_end + 1:]
+    return html
+
+
 def standardize(data, datatype):
     """Define methods that standardize fields into a singular format that is logical
     and searchable

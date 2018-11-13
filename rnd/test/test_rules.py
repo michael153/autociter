@@ -17,15 +17,11 @@
 import unittest
 import math
 
-from rnd.rules import Rule, standardize
+from rnd.creation import Rule
 
 
 # pylint: disable=missing-docstring
 class RulesTest(unittest.TestCase):
-
-    def test_standardize(self):
-        self.assertEqual("Bei Jing", standardize("北京"))
-        self.assertEqual("Skoda", standardize("Škoda"))
 
     def test_evaluate(self):
         rule = Rule("03", "16")
@@ -45,9 +41,3 @@ class RulesTest(unittest.TestCase):
     def test_magnitude(self):
         rule = Rule("03", "16")
         self.assertEqual(4, rule.magnitude)
-
-    def test_weight(self):
-        rule = Rule("03", "16")
-        self.assertEqual(math.log(4) * 1, rule.weight)
-        rule.train("03foo16", "bar")
-        self.assertEqual(math.log(4) * 0.5, rule.weight)
