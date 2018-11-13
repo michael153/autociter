@@ -30,7 +30,6 @@ import requests
 
 from PyPDF2 import PdfFileReader
 from termcolor import colored
-from timeout_decorator import timeout
 
 from dateparser.search import search_dates
 
@@ -38,6 +37,7 @@ import autociter.data.standardization as standardization
 import autociter.data.queries as queries
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
+from autociter.utils.decorators import timeout
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 WIKI_FILE_PATH = ASSETS_PATH + '/data/citations.csv'
