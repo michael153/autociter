@@ -13,7 +13,7 @@ class Rule:
         values = []
         while self.left in string and self.right in string:
             left_start = string.find(self.left)
-            left_end = left_start 6+ len(self.left)
+            left_end = left_start + len(self.left)
             right_start = string.find(self.right)
             right_end = right_start + len(self.right)
             values.append(string[left_end:right_start])
