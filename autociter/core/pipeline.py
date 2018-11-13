@@ -25,7 +25,6 @@ import re
 import string
 import sys
 import time
-import itertools
 import requests
 
 from PyPDF2 import PdfFileReader
@@ -51,30 +50,6 @@ ENCODING_RANGE = len(ENCODING_COL)
 
 # Data Aggregation
 
-
-def clean_text(text):
-    """Method that cleans a string to only include relevant characters and words"""
-    text = text.replace('\'', '')
-    text = text.replace('\"', '')
-    matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
-    words_and_pound_newline = [
-        i for i, j in itertools.zip_longest(matched_words, matched_words[1:])
-        if i != j
-    ]
-    words_and_pound_newline = [('#' if '#' in x else x)
-                               for x in words_and_pound_newline]
-    words_and_pound_newline = [(x.replace('_', '') if '_' in x else x)
-                               for x in words_and_pound_newline]
-    ret = ''
-    for i in range(len(words_and_pound_newline)):
-        word = words_and_pound_newline[i]
-        if i == 0 or word == '\n' or (i > 0 and
-                                      words_and_pound_newline[i - 1] == '\n'):
-            ret += word
-        else:
-            ret += (" " + word)
-    return ret
-
 @timeout(15)
 def get_text_from_url(url, verbose=False):
     """Preliminary method to extract only the relevant article text from a website
@@ -98,7 +73,7 @@ def get_text_from_url(url, verbose=False):
             contents = reader.getPage(0).extractText()
             if num_page > 1:
                 contents += reader.getPage(num_page - 1).extractText()
-            return clean_text(contents)
+            return standardization.standardize(contents, "text")
         except Exception as e:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
             print(
@@ -108,7 +83,7 @@ def get_text_from_url(url, verbose=False):
             return ""
     else:
         try:
-            text = clean_text(Webpage(url).content)
+            text = standardization.standardize(Webpage(url).content, "text")
             if verbose:
                 print("Text scrape successfully finished in {0} seconds: {1}".
                       format(time.time() - start_time, url))
@@ -134,7 +109,7 @@ def get_wiki_article_links_info(file,
     if verbose:
         print("Reading Wikipedia Article Links from...", file)
     start_time = time.time()
-    table = standardization.std_table(Table(file)).query(
+    table = standardization.standardize(Table(file), 'Table').query(
         queries.contains(*args))
     data = []
     total = 0
@@ -154,59 +129,17 @@ def get_wiki_article_links_info(file,
             time.time() - start_time))
     return (data, labels)
 
-
-def find_attr_substr(text, word, category):
-    """Given a string word and the type of data it is (i.e 'date'),
-        return the beginning and ending index of the substring within
-        text if found, otherwise (-1, -1)
-        """
-    if category == 'date':
-        try:
-            reference_date = datetime.datetime.strptime(word, '%m/%d/%y')
-            # Pass an impossible relative base so that relative words like "today" won't be detected
-            matches = search_dates(
-                text,
-                settings={
-                    'STRICT_PARSING': True,
-                    'RELATIVE_BASE': datetime.datetime(1000, 1, 1, 0, 0)
-                })
-            if matches:
-                for original_text, match in matches:
-                    if reference_date.date() == match.date():
-                        index = text.find(original_text)
-                        return (index, index + len(original_text))
-        except Exception as e:
-            func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(colored(">>> Error in {0}: {1}".format(func_name, e), "red"))
-            return (-1, -1)
-    else:
-        index = text.find(word)
-        if index != -1:
-            return (index, index + len(word))
-    return (-1, -1)
-
-
 def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
-
     location_dict = {}
-    std_text = standardization.std_text(text)
+    std_text = standardization.standardize(text, 'text')
     for key, val in citation_dict.items():
-        if val:
-            data_field = standardization.std_data(val, key)
-            if isinstance(data_field, list):
-                pos = [
-                    find_attr_substr(std_text, d_, key) for d_ in data_field
-                    if d_ in std_text
-                ]
-                if pos:
-                    location_dict[key] = pos
-            else:
-                pos = find_attr_substr(std_text, data_field, key)
-                if pos != (-1, -1):
-                    location_dict[key] = pos
+        if key != 'url' and val:
+            data_field = standardization.standardize(val, key)
+            pos = standardization.find(data_field, std_text, key)
+            if pos and (isinstance(data_field, list) or pos != (-1, -1)):
+                location_dict[key] = pos
     return location_dict
-
 
 def aggregate_data(info, verbose=False):
     """Collect info and manipulate into the proper format to be saved
