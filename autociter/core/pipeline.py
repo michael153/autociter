@@ -356,7 +356,7 @@ if __name__ == '__main__':
 
     print("\n")
     INFO = get_wiki_article_links_info(
-        WIKI_FILE_PATH, ['url', 'author', 'date'],
+        WIKI_FILE_PATH, ['url', 'title', 'author', 'date'],
         num=NUM_DATA_POINTS,
         already_collected=ALREADY_COLLECTED_KEYS,
         verbose=True)
