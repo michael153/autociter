@@ -56,39 +56,6 @@ class PipelineTest(unittest.TestCase):
             bools.append(len(data[0]) == length)
         self.assertEqual(all(bools), True)
 
-    def test_clean_text(self):
-        texts = [
-            "(October 6th, 2000)", "(Hi my name is\nMichael)",
-            "_What _in _the _world... hi", "Jean-Jacques Rousseau",
-            "'I'm so happy!,' said '''VIRGIL ABLOH'''", "Califørniå",
-            "Mr. @michaelwan__ is boys w/ Mrs. @middleclass.brian"
-        ]
-        answers = [
-            "October 6th 2000", "Hi my name is\nMichael",
-            "What in the world hi", "Jean Jacques Rousseau",
-            "Im so happy said VIRGIL ABLOH", "Califørniå",
-            "Mr michaelwan is boys w Mrs middleclass brian"
-        ]
-        bools = []
-        for text, ans in zip(texts, answers):
-            bools.append(pipeline.clean_text(text) == ans)
-        self.assertEqual(all(bools), True)
-
-    def test_find_attr_substr(self):
-        texts = [
-            "Hello my name is Michael Wan", "The date is April 13, 2000",
-            "How many dates are in this sentence October 6th 2000, January 1st 1999",
-            "BIRD is the word"
-        ]
-        datatypes = [("author", "Michael Wan"), ("date", "04/13/00"),
-                     ("date", "10/06/00"), ("author", "bird")]
-        outputs = [(17, 28), (12, 26), (36, 52), (-1, -1)]
-        bools = []
-        for text, datatype, true_output in zip(texts, datatypes, outputs):
-            output = pipeline.find_attr_substr(text, datatype[1], datatype[0])
-            bools.append(output == true_output)
-        self.assertEqual(all(bools), True)
-
     # def test_locate_attributes(self):
 
     def test_word_vectorization(self):
