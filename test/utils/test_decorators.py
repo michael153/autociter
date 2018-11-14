@@ -25,13 +25,13 @@ class DecoratorTest(unittest.TestCase):
 
     def test_timeout(self):
 
-        @timeout(5)
+        @timeout(1)
         def wait(seconds):
             time.sleep(seconds)
 
         try:
-            wait(1)
+            wait(0.5)
         except TimeoutException:
             self.fail("Unexpected TimeoutException")
         with self.assertRaises(TimeoutException):
-            wait(10)
+            wait(2)
