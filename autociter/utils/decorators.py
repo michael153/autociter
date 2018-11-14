@@ -52,8 +52,8 @@ def timeout(seconds_before_timeout):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             res = [
-                Exception('function [%s] timeout [%s seconds] exceeded!' %
-                          (func.__name__, seconds_before_timeout))
+                TimeoutException('function [%s] timeout [%s seconds] exceeded!'
+                                 % (func.__name__, seconds_before_timeout))
             ]
 
             def helper():
