@@ -31,13 +31,11 @@ def evaluate(rules, titles):
     debug("---")
     for rule in rules[:20]:
 	       debug(rule.weight, rule, sep="\t")
-    debug("")
-
     return rules
 
 
 def remove_duplicates(rules):
-    
+
     def same(rule1, rule2):
         return rule1.left == rule2.left and rule1.right == rule2.right
 
