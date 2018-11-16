@@ -24,6 +24,7 @@ from autociter.core.pipeline import slice_text
 from autociter.data.standardization import standardize
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
+
 from autociter.utils.debugging import debug
 
 SAMPLE_DATA = Table(assets.MOCK_DATA_PATH + "/citations_sample.csv")
