@@ -18,6 +18,7 @@ import assets
 
 from autociter.data.storage import Table, Record
 from autociter.web.webpages import Webpage
+from autociter.utils.debugging import debug
 
 from rnd.creation import analyze
 from rnd.evaluation import evaluate
@@ -35,10 +36,13 @@ def generate_rules(data_table):
         A collection of Rule instances
     """
     rules = []
+    debug("I. Generating rules...")
     for record in data_table:
+        debug("Analyzing {0}".format(record["url"]))
         webpage = Webpage(record["url"])
         new_rules = analyze(webpage.source, record["title"])
         rules.extend(new_rules)
+    debug("")
     return rules
 
 
@@ -52,9 +56,11 @@ def evaluate_rules(rules, data_table):
     Returns:
        A collection of Rule instances
     """
+    debug("II. Evaluating rules...")
     source_to_title = {
         Webpage(record["url"]).source: record["title"] for record in data_table
     }
+    debug("Calling evaluate()...")
     return evaluate(rules, source_to_title)
 
 
@@ -70,7 +76,7 @@ def save_rules(rules, filename="rules.csv"):
             fields=rule_data.fields,
             values=(rule.left, rule.right, str(rule.alpha), str(rule.beta)))
         rule_data.add(data_entry)
-    rule_data.save(filename)
+    rule_data.save(assets.DATA_PATH + "/" + filename)
 
 
 if __name__ == "__main__":

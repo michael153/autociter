@@ -18,9 +18,11 @@ import time
 from autociter.utils.debugging import debug
 
 
-def evaluate(rules, titles):
+def evaluate(rules, titles, verbose=False):
+    debug("Removing duplicates...")
     rules = remove_duplicates(rules)
     for rule in rules:
+        debug("Training {0} on {1} titles".format(rule, len(titles)))
         for source_code in titles:
             rule.train(source_code, titles[source_code])
     rules = sorted(rules, key=lambda rule: -rule.weight)
