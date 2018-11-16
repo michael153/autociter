@@ -19,11 +19,11 @@ from difflib import SequenceMatcher
 import numpy
 
 import assets
-import autociter.core.pipeline as pipeline
 
+from autociter.core.pipeline import slice_text
+from autociter.data.standardization import standardize
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
-from autociter.core.pipeline import slice_text
 
 SAMPLE_DATA = Table(assets.MOCK_DATA_PATH + "/citations_sample.csv")
 IGNORED_FIELDS = {"url", "date"}
@@ -38,6 +38,7 @@ def similarity(string1, string2):
 
 
 def contains(string, substring):
+    """Return true if string contains a substring similar to substring."""
     for index in range(len(string)):
         current = string[index:index + len(substring)]
         if similarity(current, substring) > 0.7:
@@ -59,27 +60,23 @@ def data_preservation_accuracy(sample):
     accuracies = []
     for record in sample:
         try:
-            webpage = Webpage(record["url"])
             defined_values = {
                 record[field] for field in CONSIDERED_FIELDS if record[field]
             }
-            values_in_source = {
-                value for value in defined_values
-                if contains(webpage.source, value)
-            }
-            # expected_values = defined_values.intersection(values_in_source)
-            expected_values = defined_values
+            content = Webpage(record["url"]).content
+            standardized_content = slice_text(standardize(content, "text"))
             values_in_content = {
-                value for value in expected_values
-                if contains(webpage.content, value)
+                value for value in defined_values
+                if value in standardized_content
             }
-            num_values_expected = len(expected_values)
+            num_values_expected = len(defined_values)
             num_values_found = len(values_in_content)
-            accuracy = num_values_expected / num_values_found if num_values_found else 0
-            print("{0}: {1}/{2} values found".format(record["url"], num_values_found, num_values_expected))
+            accuracy = num_values_found / num_values_expected if num_values_found else 0
+            print("{0}: {1}/{2} values found".format(
+                record["url"], num_values_found, num_values_expected))
             accuracies.append(accuracy)
-        except Exception as e:
-            print("*** Error for url {0}: {1}".format(record["url"], e))
+        except Exception as ex:  #pylint: disable=broad-except
+            print("*** Error for url {0}: {1}".format(record["url"], ex))
     return numpy.average(accuracies)
 
 
@@ -104,16 +101,22 @@ def content_start_accuracy(sample):
         webpage = Webpage(record["url"])
         expected_title = record["title"]
         try:
-            predicted_title = retrieve_title_from_content(standardization.standardize(webpage.content, "text"),
-                                                          len(expected_title))
+            predicted_title = retrieve_title_from_content(
+                standardize(webpage.content, "text"),
+                len(expected_title))
             sim = similarity(expected_title.title(), predicted_title.title())
-            print(record["url"], predicted_title.title(), expected_title.title(), sim, sep="\n")
+            print(
+                record["url"],
+                predicted_title.title(),
+                expected_title.title(),
+                sim,
+                sep="\n")
             print("\n")
             # If the predicted and actual titles are similar, then the content
             # probably started at the right place.
             if sim > 0.7:
                 num_valid += 1
             total += 1
-        except Exception as e:
-            print("*** Error: {0}\n".format(str(e)))
-    return (num_valid / total)
+        except Exception as ex:  #pylint: disable=broad-except
+            print("*** Error: {0}\n".format(ex))
+    return num_valid / total
