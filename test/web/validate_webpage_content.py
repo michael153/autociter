@@ -25,6 +25,8 @@ from autociter.data.standardization import standardize
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 
+from autociter.utils.debugging import debug
+
 SAMPLE_DATA = Table(assets.MOCK_DATA_PATH + "/citations_sample.csv")
 IGNORED_FIELDS = {"url", "date"}
 CONSIDERED_FIELDS = [
@@ -57,6 +59,7 @@ def data_preservation_accuracy(sample):
     Arguments:
         sample: A Table instance of sample data
     """
+    debug("Starting data preservation test.")
     accuracies = []
     for record in sample:
         try:
@@ -72,12 +75,21 @@ def data_preservation_accuracy(sample):
             num_values_expected = len(defined_values)
             num_values_found = len(values_in_content)
             accuracy = num_values_found / num_values_expected if num_values_found else 0
-            print("{0}: {1}/{2} values found".format(
-                record["url"], num_values_found, num_values_expected))
+            debug("({0} : {1}) | {2}".format(
+                num_values_found, num_values_expected, record["url"]))
             accuracies.append(accuracy)
         except Exception as ex:  #pylint: disable=broad-except
-            print("*** Error for url {0}: {1}".format(record["url"], ex))
-    return numpy.average(accuracies)
+            debug("Error   | {0} | {1}".format(record["url"], ex))
+    average_accuracy = numpy.average(accuracies)
+
+    debug("Data accuracy test complete.\n")
+    debug("SUMMARY")
+    debug("---")
+    debug("average accuracy:", average_accuracy)
+    debug("# records tested:", len(sample))
+    debug("")
+
+    return average_accuracy
 
 
 def content_start_accuracy(sample):
@@ -89,6 +101,7 @@ def content_start_accuracy(sample):
     Arguments:
         sample: A Table instance of sample data
     """
+    debug("Starting content start test.")
 
     def retrieve_title_from_content(content, len_title):
         whitespace_index = content.find(" ")
@@ -105,18 +118,27 @@ def content_start_accuracy(sample):
                 standardize(webpage.content, "text"),
                 len(expected_title))
             sim = similarity(expected_title.title(), predicted_title.title())
-            print(
+            debug(
                 record["url"],
                 predicted_title.title(),
                 expected_title.title(),
                 sim,
                 sep="\n")
-            print("\n")
+            debug("\n")
             # If the predicted and actual titles are similar, then the content
             # probably started at the right place.
             if sim > 0.7:
                 num_valid += 1
             total += 1
         except Exception as ex:  #pylint: disable=broad-except
-            print("*** Error: {0}\n".format(ex))
-    return num_valid / total
+            debug("*** Error: {0}\n".format(ex))
+    accuracy = num_valid / total
+
+    debug("Content start test complete.\n")
+    debug("SUMMARY")
+    debug("---")
+    debug("accuracy:", accuracy)
+    debug("# records tested:", len(sample))
+    debug("")
+
+    return accuracy
