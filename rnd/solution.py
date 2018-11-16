@@ -20,7 +20,7 @@ from autociter.data.storage import Table, Record
 from autociter.web.webpages import Webpage
 from autociter.utils.debugging import debug
 
-from rnd.creation import analyze
+from rnd.creation import analyze, Rule
 from rnd.evaluation import evaluate
 
 DATA_TABLE = Table(assets.DATA_PATH + "/title_data.csv")
@@ -64,11 +64,12 @@ def evaluate_rules(rules, data_table):
     return evaluate(rules, source_to_title)
 
 
-def save_rules(rules, filename="rules.csv"):
+def save_rules(rules, filename=(assets.DATA_PATH + "/rules.csv")):
     """Save rules to a file so that they can be reconstructed later.
 
     Arguments:
         rules: A collection of Rule objects
+        filename: A path to a csv of rule data
     """
     rule_data = Table(fields=("left", "right", "alpha", "beta"))
     for rule in rules:
@@ -77,6 +78,27 @@ def save_rules(rules, filename="rules.csv"):
             values=(rule.left, rule.right, str(rule.alpha), str(rule.beta)))
         rule_data.add(data_entry)
     rule_data.save(assets.DATA_PATH + "/" + filename)
+
+
+def load_rules(filename):
+    """Load rules from a file.
+
+    Arguments:
+        filename: A path to a csv of rule data.
+
+    Returns:
+        A collection of rules.
+    """
+    rule_data = Table(filename)
+    rules = []
+    for record in rule_data:
+        try:
+            rule = Rule(record["left"], record["right"])
+            rule.alpha, rule.beta = record["alpha"], record["beta"]
+            rules.append(rule)
+        except AssertionError:
+            pass
+    return rules
 
 
 if __name__ == "__main__":
