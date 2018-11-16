@@ -52,7 +52,7 @@ def timeout(seconds_before_timeout):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             res = [
-                TimeoutException('function [%s] timeout [%s seconds] exceeded!'
+                TimeoutException('%s timed out after %s seconds'
                                  % (func.__name__, seconds_before_timeout))
             ]
 
