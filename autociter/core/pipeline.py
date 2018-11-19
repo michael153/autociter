@@ -37,6 +37,7 @@ import autociter.data.queries as queries
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 from autociter.utils.decorators import timeout
+from autociter.utils.debugging import debug
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 WIKI_FILE_PATH = ASSETS_PATH + '/data/citations.csv'
@@ -50,64 +51,68 @@ ENCODING_RANGE = len(ENCODING_COL)
 
 # Data Aggregation
 
+
 @timeout(15)
-def get_text_from_url(url, verbose=False):
-    """Preliminary method to extract only the relevant article text from a website
-    Failed cases:
-    - https://www.bbc.com/sport/football/22787925, ['Alasdair Lamont']
-    - http://ws680.nist.gov/publication/get_pdf.cfm?pub_id=101240', ['William Grosshandler']
-    - https://nypost.com/2011/09/19/7-world-trade-center-fully-leased/ (Still gives
-      boilerplate info such as 'View author archive', 'email the author', 'etc')
-    - https://www.nytimes.com/2001/12/20/nyregion/nation-challenged-trade-center-city-had-been-warned-fuel-tank-7-world-trade.html
-      (Gives unnecessary '\n' in title)
-    - https://www.politico.eu/article/monster-at-the-berlaymont-martin-selmayr-european-commission-jean-claude-juncker/
-      (HTTP Error 403: Forbidden)
-    """
+def get_text_from_pdf(pdf_url):
+    """Method to retrieve text from an online pdf"""
+    start_time = time.time()
+    try:
+        req = requests.get(pdf_url, stream=True)
+        file = io.BytesIO(req.content)
+        reader = PdfFileReader(file, strict=False)
+        num_pages = reader.getNumPages()
+        contents = reader.getPage(0).extractText()
+        if num_pages > 1:
+            contents += reader.getPage(num_pages - 1).extractText()
+        debug("PDF scrape successfully finished in {0} seconds: {1}".format(
+            time.time() - start_time, pdf_url))
+        return standardization.standardize(contents, "text")
+    except Exception as error:
+        func_name = inspect.getframeinfo(inspect.currentframe()).function
+        debug(
+            colored(
+                "*** Error: Reading pdf in {0} ({1}): {2}".format(
+                    func_name, pdf_url, error), "red"))
+        return ""
+
+
+@timeout(15)
+def get_text_from_url(url):
+    """Method to get text from any url"""
     start_time = time.time()
     if ".pdf" in url:
-        try:
-            req = requests.get(url, stream=True)
-            file = io.BytesIO(req.content)
-            reader = PdfFileReader(file, strict=False)
-            num_page = reader.getNumPages()
-            contents = reader.getPage(0).extractText()
-            if num_page > 1:
-                contents += reader.getPage(num_page - 1).extractText()
-            return standardization.standardize(contents, "text")
-        except Exception as e:
-            func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(
-                colored(
-                    "*** Error: Reading pdf in {0} ({1}): {2}".format(
-                        func_name, url, e), "red"))
-            return ""
+        return get_text_from_pdf(url)
     else:
         try:
             text = standardization.standardize(Webpage(url).content, "text")
-            if verbose:
-                print("Text scrape successfully finished in {0} seconds: {1}".
-                      format(time.time() - start_time, url))
+            debug(
+                "Text scrape successfully finished in {0} seconds: {1}".format(
+                    time.time() - start_time, url))
             return text
-        except Exception as e:
+        except Exception as error:
             func_name = inspect.getframeinfo(inspect.currentframe()).function
-            print(
+            debug(
                 colored(
                     "*** Error: Reading text in {0} ({1}): {2}".format(
-                        func_name, url, e), "red"))
+                        func_name, url, error), "red"))
             return ""
 
 
-def get_wiki_article_links_info(file,
-                                args,
-                                num=1000,
-                                already_collected=[],
-                                verbose=False):
+@timeout(15)
+def get_content_from_url(url):
+    # Extracts only the ceontent / specific text from a da
+    try:
+        return slice_text(get_text_from_url(url))
+    except Exception as error:
+        return ""
+
+
+def get_wiki_article_links_info(file, args, num=1000, already_collected=[]):
     """Retrieve article information from wikipedia database Tables, and store
     data into a tupled list
     >>> get_wiki_article_links_info('asserts/data.txt', ['url', 'author'])
     """
-    if verbose:
-        print("Reading Wikipedia Article Links from...", file)
+    debug("Reading Wikipedia Article Links from...", file)
     start_time = time.time()
     table = standardization.standardize(Table(file), 'Table').query(
         queries.contains(*args))
@@ -124,10 +129,10 @@ def get_wiki_article_links_info(file,
     # data = [tuple([rec[a] for a in args]) for rec in table.records]
     # Return labels in order to remember what each index in a datapoint represents
     labels = {args[x]: x for x in range(len(args))}
-    if verbose:
-        print("Links successfully collected in {0} seconds\n".format(
-            time.time() - start_time))
+    debug("Links successfully collected in {0} seconds\n".format(time.time() -
+                                                                 start_time))
     return (data, labels)
+
 
 def locate_attributes(text, citation_dict):
     """Return indices of attribute in the text string if it is found"""
@@ -141,7 +146,8 @@ def locate_attributes(text, citation_dict):
                 location_dict[key] = pos
     return location_dict
 
-def aggregate_data(info, verbose=False):
+
+def aggregate_data(info):
     """Collect info and manipulate into the proper format to be saved
     as data
     Arguments:
@@ -154,8 +160,7 @@ def aggregate_data(info, verbose=False):
         bad_links = json.load(open(BAD_WIKI_LINKS_PATH))
     except:
         bad_links = {}
-    if verbose:
-        print("Getting {0} points...".format(len(datapoints)))
+    debug("Getting {0} points...".format(len(datapoints)))
     for entry in datapoints:
         url = entry[label_lookup['url']]
         citation_dict = {
@@ -163,7 +168,7 @@ def aggregate_data(info, verbose=False):
             for x in label_lookup.keys()
         }
         try:
-            text = slice_text(get_text_from_url(url, verbose))
+            text = get_content_from_url(url)
             if text.strip() != "":
                 vec = vectorize_text(text)
                 if vec:
@@ -358,10 +363,9 @@ if __name__ == '__main__':
     INFO = get_wiki_article_links_info(
         WIKI_FILE_PATH, ['url', 'title', 'author', 'date'],
         num=NUM_DATA_POINTS,
-        already_collected=ALREADY_COLLECTED_KEYS,
-        verbose=True)
+        already_collected=ALREADY_COLLECTED_KEYS)
 
-    DATA = aggregate_data(INFO, verbose=True)
+    DATA = aggregate_data(INFO)
     save_data(ARTICLE_DATA_FILE_PATH, DATA, override_data=OVERRIDE_DATA)
 
 # d = get_saved_data('assets/article_data.dat')
