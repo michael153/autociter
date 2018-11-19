@@ -32,8 +32,8 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
 
     def __init__(self, webpage):
         """Construct extractor and standardize markdown."""
-        self.source = standardization.std_html(webpage.source)
-        self.markdown = standardization.std_markdown(webpage.markdown)
+        self.source = standardization.standardize(webpage.source, "html")
+        self.markdown = standardization.standardize(webpage.markdown, "markdown")
 
     @property
     def title(self):

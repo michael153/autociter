@@ -26,35 +26,33 @@ from autociter.data.storage import Table, Record
 from autociter.data.queries import contains
 
 
-def std_markdown(markdown):
-    """Remove the substring 'Image\n\n' from markdown."""
-    for substring in {"Image\n\n"}:
-        markdown = markdown.replace(substring, "")
-    return markdown
-
-
-def std_html(html):
-    """Remove script and style elements from HTML."""
-    html = remove_elements(html, "script")
-    html = remove_elements(html, "style")
-    return html
-
-
-def remove_elements(html, tag_name):
-    """Remove elements of a given type from HTML."""
-    while "<" + tag_name in html:
-        open_tag_start = html.find("<" + tag_name)
-        open_tag_end = html.find(">", open_tag_start)
-        close_tag_start = html.find("</" + tag_name, open_tag_end)
-        close_tag_end = html.find(">", close_tag_start)
-        html = html[:open_tag_start] + html[close_tag_end + 1:]
-    return html
 
 
 def standardize(data, datatype):
     """Define methods that standardize fields into a singular format that is logical
     and searchable
     """
+    def std_markdown(markdown):
+        """Remove the substring 'Image\n\n' from markdown."""
+        for substring in {"Image\n\n"}:
+            markdown = markdown.replace(substring, "")
+        return markdown
+
+    def std_html(html):
+        """Remove script and style elements from HTML."""
+        def remove_elements(html, tag_name):
+            """Remove elements of a given type from HTML."""
+            while "<" + tag_name in html:
+                open_tag_start = html.find("<" + tag_name)
+                open_tag_end = html.find(">", open_tag_start)
+                close_tag_start = html.find("</" + tag_name, open_tag_end)
+                close_tag_end = html.find(">", close_tag_start)
+                html = html[:open_tag_start] + html[close_tag_end + 1:]
+            return html
+
+        html = remove_elements(html, "script")
+        html = remove_elements(html, "style")
+        return html
 
     def std_table(table):
         """Standardizes a default Table object so that it can be processed by
@@ -150,7 +148,7 @@ def standardize(data, datatype):
         return url
 
     try:
-        if datatype.lower() in ["table", "text", "author", "date", "title", "url"]:
+        if datatype.lower() in ["markdown", "html", "table", "text", "author", "date", "title", "url"]:
             return eval("std_{0}(data)".format(datatype.lower()))
         else:
             print(
@@ -183,8 +181,9 @@ def find(field, text, datatype):
         ret = []
         for author in authors:
             pos = find_singular_author(author, text)
-            if pos != (-1, -1):
-                ret.append(pos)
+            ret.append(pos)
+        if all([p == (-1, -1) for p in ret]):
+            return []
         return ret
 
     def find_date(date, text):
