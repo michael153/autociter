@@ -37,8 +37,8 @@ import autociter.core.pipeline as pipeline
 
 ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 
-config = tf.ConfigProto(device_count = {'GPU': 1, 'CPU': 4} ) 
-sess = tf.Session(config=config) 
+config = tf.ConfigProto(device_count={'GPU': 1, 'CPU': 4})
+sess = tf.Session(config=config)
 keras.backend.set_session(sess)
 
 
