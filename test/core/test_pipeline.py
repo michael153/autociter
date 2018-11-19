@@ -19,19 +19,25 @@ import random
 
 import assets
 import autociter.core.pipeline as pipeline
+import autociter.utils.debugging as debug
 
 
 # pylint: disable=missing-docstring
 class PipelineTest(unittest.TestCase):
     def setUp(self):
         self.mock_data_dir = assets.MOCK_DATA_PATH + "/pipeline/"
+        self.originalDebugValue = debug.DEBUGGING_ENABLED
+        debug.DEBUGGING_ENABLED = False
+
+    def tearDown(self):
+        debug.DEBUGGING_ENABLED = self.originalDebugValue
 
     def test_get_text_from_url_pdf(self):
         with open(self.mock_data_dir + "pdf_url_list", "r") as datafile:
             urls = datafile.read().split('\n')
             bools = []
             for url in urls:
-                bools.append(pipeline.get_text_from_url(url) != "")
+                bools.append(pipeline.get_text_from_pdf(url) != "")
             self.assertEqual(all(bools), True)
 
     def test_get_text_from_url_regular(self):
