@@ -17,30 +17,12 @@
 from difflib import SequenceMatcher
 from html import unescape
 
+from autociter.data import standardization
+
 
 def similarity(string1, string2):
     """Return a score representing the similartiy of two strings."""
     return SequenceMatcher(None, string1, string2).ratio()
-
-
-def remove_scripts(html):
-    while "<script" in html:
-        open_tag_start = html.find("<script")
-        open_tag_end = html.find(">", open_tag_start)
-        close_tag_start = html.find("</script", open_tag_end)
-        close_tag_end = html.find(">", close_tag_start)
-        html = html[:open_tag_start] + html[close_tag_end + 1:]
-    return html
-
-
-def remove_style(html):
-    while "<style" in html:
-        open_tag_start = html.find("<style")
-        open_tag_end = html.find(">", open_tag_start)
-        close_tag_start = html.find("</style", open_tag_end)
-        close_tag_end = html.find(">", close_tag_start)
-        html = html[:open_tag_start] + html[close_tag_end + 1:]
-    return html
 
 
 class ContentExtractor:  #pylint: disable=too-few-public-methods
@@ -50,18 +32,8 @@ class ContentExtractor:  #pylint: disable=too-few-public-methods
 
     def __init__(self, webpage):
         """Construct extractor and standardize markdown."""
-
-        def clean(source):
-            source = remove_style(source)
-            source = remove_scripts(source)
-            return source
-
-        self.source = clean(webpage.source)
-        self.markdown = webpage.markdown
-        for substring in self.REMOVED_SUBSTRINGS:
-            self.markdown.replace(substring, "")
-        self.markdown = self.markdown.lower()
-
+        self.source = standardization.std_html(webpage.source)
+        self.markdown = standardization.std_markdown(webpage.markdown)
 
     @property
     def title(self):
