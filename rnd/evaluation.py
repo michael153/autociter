@@ -18,7 +18,7 @@ import time
 from autociter.utils.debugging import debug
 
 
-def evaluate(rules, titles, verbose=False):
+def evaluate(rules, titles):
     debug("Removing duplicates...")
     rules = remove_duplicates(rules)
     for rule in rules:
