@@ -75,9 +75,9 @@ def save_rules(rules, filename=(assets.DATA_PATH + "/rules.csv")):
     for rule in rules:
         data_entry = Record(
             fields=rule_data.fields,
-            values=(rule.left, rule.right, str(rule.alpha), str(rule.beta)))
+            values=(str(rule.left), str(rule.right), str(rule.alpha), str(rule.beta)))
         rule_data.add(data_entry)
-    rule_data.save(assets.DATA_PATH + "/" + filename)
+    rule_data.save(filename)
 
 
 def load_rules(filename):

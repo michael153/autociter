@@ -20,9 +20,9 @@ from autociter.utils.debugging import debug
 
 def evaluate(rules, titles):
     debug("Removing duplicates...")
-    rules = remove_duplicates(rules)
-    for rule in rules:
-        debug("Training {0} on {1} titles".format(rule, len(titles)))
+    # rules = remove_duplicates(rules)
+    for i, rule in enumerate(rules):
+        debug("Training Rule {0}/{1}: {2} on {3} titles".format(i, len(rules), rule, len(titles)))
         for source_code in titles:
             rule.train(source_code, titles[source_code])
     rules = sorted(rules, key=lambda rule: -rule.weight)
