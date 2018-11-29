@@ -51,7 +51,6 @@ ENCODING_RANGE = len(ENCODING_COL)
 
 # Data Aggregation
 
-
 @timeout(15)
 def get_text_from_pdf(pdf_url):
     """Method to retrieve text from an online pdf"""
@@ -142,7 +141,12 @@ def locate_attributes(text, citation_dict):
         if key != 'url' and val:
             data_field = standardization.standardize(val, key)
             pos = standardization.find(data_field, std_text, key)
-            if pos and (isinstance(data_field, list) or pos != (-1, -1)):
+            good = False
+            if isinstance(pos, list):
+                good = not all([k == (-1, -1) for k in pos])
+            else:
+                good = (pos != (-1, -1))
+            if pos and good:
                 location_dict[key] = pos
     return location_dict
 
