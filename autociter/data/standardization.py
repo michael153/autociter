@@ -19,19 +19,20 @@ located within a text"""
 import re
 import itertools
 import datetime
+import numpy as np
 
 from dateparser.search import search_dates
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 from autociter.data.storage import Table, Record
 from autociter.data.queries import contains
-
-
 
 
 def standardize(data, datatype):
     """Define methods that standardize fields into a singular format that is logical
     and searchable
     """
+
     def std_markdown(markdown):
         """Remove the substring 'Image\n\n' from markdown."""
         for substring in {"Image\n\n"}:
@@ -40,6 +41,7 @@ def standardize(data, datatype):
 
     def std_html(html):
         """Remove script and style elements from HTML."""
+
         def remove_elements(html, tag_name):
             """Remove elements of a given type from HTML."""
             while "<" + tag_name in html:
@@ -90,10 +92,11 @@ def standardize(data, datatype):
             """Method that cleans a string to only include relevant characters and words"""
             text = text.replace('\'', '')
             text = text.replace('\"', '')
-            matched_words = re.findall(r'\S+|\n', re.sub("[^\w#\n]", " ", text))
+            matched_words = re.findall(r'\S+|\n', re.sub(
+                "[^\w#\n]", " ", text))
             words_and_pound_newline = [
-                i for i, j in itertools.zip_longest(matched_words, matched_words[1:])
-                if i != j
+                i for i, j in itertools.zip_longest(
+                    matched_words, matched_words[1:]) if i != j
             ]
             words_and_pound_newline = [('#' if '#' in x else x)
                                        for x in words_and_pound_newline]
@@ -102,8 +105,8 @@ def standardize(data, datatype):
             ret = ''
             for i in range(len(words_and_pound_newline)):
                 word = words_and_pound_newline[i]
-                if i == 0 or word == '\n' or (i > 0 and
-                                              words_and_pound_newline[i - 1] == '\n'):
+                if i == 0 or word == '\n' or (
+                        i > 0 and words_and_pound_newline[i - 1] == '\n'):
                     ret += word
                 else:
                     ret += (" " + word)
@@ -122,16 +125,17 @@ def standardize(data, datatype):
     def std_author(authors):
         """Method for standardizing a field if it is a list of authors"""
         return [
-            ' '.join([name.capitalize() for name in author.replace('.', '').replace('-', ' ').split(' ')])
-            for author in authors
+            ' '.join([
+                name.capitalize() for name in author.replace('.', '').replace(
+                    '-', ' ').split(' ')
+            ]) for author in authors
         ]
 
     def std_date(date):
         """Method for standardizing a field if it is a date"""
         base = datetime.datetime(1000, 1, 1, 0, 0)
         matches = search_dates(
-            date,
-            settings={
+            date, settings={
                 'STRICT_PARSING': True,
                 'RELATIVE_BASE': base
             })
@@ -148,7 +152,10 @@ def standardize(data, datatype):
         return url
 
     try:
-        if datatype.lower() in ["markdown", "html", "table", "text", "author", "date", "title", "url"]:
+        if datatype.lower() in [
+                "markdown", "html", "table", "text", "author", "date", "title",
+                "url"
+        ]:
             return eval("std_{0}(data)".format(datatype.lower()))
         else:
             print(
@@ -171,6 +178,54 @@ def find(field, text, datatype):
             return (index, index + len(field))
         return (-1, -1)
 
+    def find_fuzzy_fast(field, text, threshold_value=0.6):
+        """Fast fuzzy string matching
+        References:
+        https://bergvca.github.io/2017/10/14/super-fast-string-matching.html
+        http://blog.christianperone.com/2013/09/machine-learning-cosine-similarity-for-vector-space-models-part-iii/
+        https://stackoverflow.com/questions/52048562/efficient-way-to-compute-cosine-similarity-between-1d-array-and-all-rows-in-a-2d
+        https://stackoverflow.com/questions/36013295/find-best-substring-match
+        """
+
+        def generate_chunks(string, length):
+            """Helper method for generating chunks"""
+            return [
+                string[0 + i:length + i]
+                for i in range(0, len(string), length)
+            ]
+
+        def generate_ngrams(string, n=3):
+            """Helper method for generating ngrams"""
+            ngrams = zip(*[string[i:] for i in range(n)])
+            return [''.join(ngram) for ngram in ngrams]
+
+        chunks = [field] + generate_chunks(text, len(field))
+        vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
+        tf_idf_matrix = vectorizer.fit_transform(chunks)
+        vec, arr = tf_idf_matrix[0].toarray().flatten(
+        ), tf_idf_matrix[1:].toarray()
+        a, b = np.linalg.norm(arr, axis=1), np.linalg.norm(vec)
+        out = (arr @ vec) / (a * b)
+        index = np.argmax(out) * len(field)
+
+        ngrams = [field]
+        for i in range(
+                max(0, index - len(field)), min(index + len(field),
+                                                len(text))):
+            ngrams.append(text[i:i + len(field)])
+
+        vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
+        tf_idf_matrix = vectorizer.fit_transform(ngrams)
+        vec, arr = tf_idf_matrix[0].toarray().flatten(
+        ), tf_idf_matrix[1:].toarray()
+        a, b = np.linalg.norm(arr, axis=1), np.linalg.norm(vec)
+        out = (arr @ vec) / (a * b)
+        ans = np.argmax(out) + max(0, index - len(field))
+        if np.max(out) < threshold_value:
+            return (-1, -1)
+        ret = (ans, ans + len(field))
+        return (ret[0].item(), ret[1].item())
+
     def find_singular_author(author, text):
         """Helper method for finding a singular author"""
         return find_generic(author.lower(), text.lower())
@@ -182,8 +237,6 @@ def find(field, text, datatype):
         for author in authors:
             pos = find_singular_author(author, text)
             ret.append(pos)
-        if all([p == (-1, -1) for p in ret]):
-            return []
         return ret
 
     def find_date(date, text):
@@ -202,8 +255,11 @@ def find(field, text, datatype):
                     return find_generic(original_text.lower(), text.lower())
 
     def find_title(title, text):
-        """Method for finding a title field in a text"""
-        return find_generic(title.lower(), text.lower())
+        """Method for finding a title field in a text
+        ?? 'http://www.digitalspy.com/gaming/retro-corner/news/a381156/retro-corner-wolfenstein-3d/'
+        """
+        # return find_generic(title.lower(), text.lower())
+        return find_fuzzy_fast(title.lower(), text.lower())
 
     try:
         if datatype.lower() in ["author", "date", "title"]:
