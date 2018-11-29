@@ -31,7 +31,6 @@ import tensorflow as tf
 import keras
 from keras.layers import LSTM, Dense, Dropout
 from keras.models import Sequential
-from keras.callbacks import Callback
 
 import autociter.core.pipeline as pipeline
 
@@ -40,28 +39,6 @@ ASSETS_PATH = os.path.dirname(os.path.realpath(__file__)) + '/../../assets'
 config = tf.ConfigProto(device_count={'GPU': 1, 'CPU': 4})
 sess = tf.Session(config=config)
 keras.backend.set_session(sess)
-
-
-class EarlyStopByLossVal(Callback):
-    """Class that terminates training when differential in loss value is
-    underneath a certain threshold (0.000005)
-    """
-    def __init__(self, monitor='val_loss', value=0.000005, verbose=0):
-        self.monitor = monitor
-        self.value = value
-        self.verbose = verbose
-        super(Callback, self).__init__()
-
-    def on_epoch_end(self, epoch, logs={}):
-        current = logs.get(self.monitor)
-        if current is None:
-            print("*** Warning: Early stopping requires %s available!" %
-                  self.monitor)
-        if current < self.value:
-            if self.verbose > 0:
-                print("Epoch %05d: early stopping THR" % epoch)
-            self.model.stop_training = True
-
 
 def build_model(input_length=68, output_dim=600):
     '''Builds a Keras machine learning model
@@ -72,14 +49,15 @@ def build_model(input_length=68, output_dim=600):
     model = Sequential()
     # model.add(Embedding(600, 300, input_length=input_length))
 
-    model.add(LSTM(600, input_shape=(600, input_length), return_sequences=True))
+    model.add(LSTM(2000, input_shape=(600, input_length), return_sequences=True))
 
     model.add(Dropout(0.2))
-    model.add(LSTM(600, return_sequences=True))
+    model.add(LSTM(1600, return_sequences=True))
     model.add(Dropout(0.2))
-    model.add(LSTM(400))
+    model.add(LSTM(1200))
     model.add(Dropout(0.2))
-    model.add(Dense(400, activation='relu'))
+    model.add(Dense(800, activation='relu'))
+    model.add(Dense(800, activation='tanh'))
     model.add(Dense(output_dim, activation='sigmoid'))
 
     start = time.time()
@@ -94,7 +72,6 @@ def build_model(input_length=68, output_dim=600):
     print("Inputs: {0}".format(model.input_shape))
     print("Outputs: {0}".format(model.output_shape))
     return model
-
 
 def get_x_y(train_data, attribute=""):
     """Given the overall training data (list of dics), get a list of
@@ -121,7 +98,6 @@ def get_x_y(train_data, attribute=""):
                 sys.exit()
     return np.array(x), np.array(y)
 
-
 def train(attribute, num, max_epoch=250, nfolds=10, batch_size=128):
     saved_article_data_path = ASSETS_PATH + '/data/article_data.dat'
     saved_article_data = pipeline.get_saved_data(saved_article_data_path)
@@ -132,10 +108,6 @@ def train(attribute, num, max_epoch=250, nfolds=10, batch_size=128):
 
     print("X.shape", X.shape)
     print("Y.shape", Y.shape)
-
-    callbacks = [
-        EarlyStopByLossVal(monitor='val_loss', value=0.00001, verbose=1),
-    ]
 
     best_m_auc = 0.0
     print("\n\nStarting model training...\n\n")
@@ -158,8 +130,7 @@ def train(attribute, num, max_epoch=250, nfolds=10, batch_size=128):
                 y_train,
                 batch_size=batch_size,
                 epochs=10,
-                validation_split=0.2,
-                callbacks=callbacks)
+                validation_split=0.2)
 
             t_probs = model.predict_proba(x_holdout)
             t_auc = sklearn.metrics.roc_auc_score(y_holdout.flatten(),
@@ -192,5 +163,34 @@ def train(attribute, num, max_epoch=250, nfolds=10, batch_size=128):
 
     return optimal_model
 
+def simple_train(attribute, num):
+    saved_article_data_path = ASSETS_PATH + '/data/article_data.dat'
+    saved_article_data = pipeline.get_saved_data(saved_article_data_path)
+    article_data = list(saved_article_data.values())[:num]
+    process_id = int(time.time())
 
-train('author', 6000)
+    X, Y = get_x_y(article_data, attribute=attribute)
+
+    print("X.shape", X.shape)
+    print("Y.shape", Y.shape)
+    model = build_model(input_length=68, output_dim=600)
+
+    x_train, x_test, y_train, y_test = train_test_split(X, Y, test_size=0.25)
+    model.fit(x_train, y_train, batch_size=batch_size, epochs=10, validation_split=0.2)
+
+    probs = model.predict_proba(x_test)
+    m_auc = sklearn.metrics.roc_auc_score(y_test.flatten(), probs.flatten())
+    print('\nScore is %f\n' % m_auc)
+
+    epoch_time = int(time.time())
+    new_dir = ASSETS_PATH + "/ml/{0}".format(epoch_time)
+    os.mkdir(new_dir)
+    optimal_model.save_weights(new_dir + "/weights")
+    with open(new_dir + "/model_json", "w") as out:
+        out.write(optimal_model.to_json())
+
+    return optimal_model
+
+
+# train('author', 6000)
+simple_train('author', 10000)
