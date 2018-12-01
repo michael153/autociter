@@ -212,6 +212,8 @@ def find(field, text, datatype):
         for i in range(
                 max(0, index - len(field)), min(index + len(field),
                                                 len(text))):
+            if i+len(field) >= len(text):
+                break
             ngrams.append(text[i:i + len(field)])
 
         vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
