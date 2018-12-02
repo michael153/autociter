@@ -17,7 +17,6 @@ import sys
 
 DEBUGGING_ENABLED = True
 
-
 def debug(*message, **kwargs):
     if DEBUGGING_ENABLED:
         print(*message, **kwargs)
