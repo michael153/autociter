@@ -26,6 +26,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 from autociter.data.storage import Table, Record
 from autociter.data.queries import contains
+from autociter.utils.debugging import debug
 
 
 def standardize(data, datatype):
@@ -158,27 +159,28 @@ def standardize(data, datatype):
         ]:
             return eval("std_{0}(data)".format(datatype.lower()))
         else:
-            print(
+            debug(
                 "*** Error in standardization.standardize: {0} not standardizable"
                 .format(datatype))
             return data
     except Exception as e:
-        print("*** Error in standardization.standardize: {0}".format(e))
+        debug("*** Error in standardization.standardize: {0}".format(e))
         return ""
 
 
-def find(field, text, datatype):
+def find(field, text, datatype, start=0, end=None):
     """Attempts to locate a field as a substring of text based on its datatype.
     Assumes text is cleaned by pipeline's clean_text"""
 
-    def find_generic(field, text):
+    def find_generic(field, text, start=0, end=None):
         """Basic method for finding any generic field within a text"""
+        text = text[start:end]
         index = text.find(field)
         if index != -1:
-            return (index, index + len(field))
+            return (start + index, start + index + len(field))
         return (-1, -1)
 
-    def find_fuzzy_fast(field, text, threshold_value=0.6):
+    def find_fuzzy_fast(field, text, start=0, end=None, threshold_value=0.6):
         """Fast fuzzy string matching
         References:
         https://bergvca.github.io/2017/10/14/super-fast-string-matching.html
@@ -199,50 +201,55 @@ def find(field, text, datatype):
             ngrams = zip(*[string[i:] for i in range(n)])
             return [''.join(ngram) for ngram in ngrams]
 
-        chunks = [field] + generate_chunks(text, len(field))
-        vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
-        tf_idf_matrix = vectorizer.fit_transform(chunks)
-        vec, arr = tf_idf_matrix[0].toarray().flatten(
-        ), tf_idf_matrix[1:].toarray()
-        a, b = np.linalg.norm(arr, axis=1), np.linalg.norm(vec)
-        out = (arr @ vec) / (a * b)
-        index = np.argmax(out) * len(field)
+        try:
+            text = text[start:end]
+            chunks = [field] + generate_chunks(text, len(field))
+            vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
+            tf_idf_matrix = vectorizer.fit_transform(chunks)
+            vec, arr = tf_idf_matrix[0].toarray().flatten(
+            ), tf_idf_matrix[1:].toarray()
+            a, b = np.linalg.norm(arr, axis=1), np.linalg.norm(vec)
+            out = (arr @ vec) / (a * b)
+            index = np.argmax(out) * len(field)
 
-        ngrams = [field]
-        for i in range(
-                max(0, index - len(field)), min(index + len(field),
-                                                len(text))):
-            if i+len(field) >= len(text):
-                break
-            ngrams.append(text[i:i + len(field)])
+            ngrams = [field]
+            for i in range(
+                    max(0, index - len(field)), min(index + len(field),
+                                                    len(text))):
+                if i+len(field) >= len(text):
+                    break
+                ngrams.append(text[i:i + len(field)])
 
-        vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
-        tf_idf_matrix = vectorizer.fit_transform(ngrams)
-        vec, arr = tf_idf_matrix[0].toarray().flatten(
-        ), tf_idf_matrix[1:].toarray()
-        a, b = np.linalg.norm(arr, axis=1), np.linalg.norm(vec)
-        out = (arr @ vec) / (a * b)
-        ans = np.argmax(out) + max(0, index - len(field))
-        if np.max(out) < threshold_value:
+            vectorizer = TfidfVectorizer(min_df=1, analyzer=generate_ngrams)
+            tf_idf_matrix = vectorizer.fit_transform(ngrams)
+            vec, arr = tf_idf_matrix[0].toarray().flatten(
+            ), tf_idf_matrix[1:].toarray()
+            a, b = np.linalg.norm(arr, axis=1), np.linalg.norm(vec)
+            out = (arr @ vec) / (a * b)
+            ans = np.argmax(out) + max(0, index - len(field))
+            if np.max(out) < threshold_value:
+                return (-1, -1)
+            ret = (ans, ans + len(field))
+            return (start + ret[0].item(), start + ret[1].item())
+        except Exception as e:
             return (-1, -1)
-        ret = (ans, ans + len(field))
-        return (ret[0].item(), ret[1].item())
 
-    def find_singular_author(author, text):
+    def find_singular_author(author, text, start=0, end=None):
         """Helper method for finding a singular author"""
-        return find_generic(author.lower(), text.lower())
+        return find_generic(author.lower(), text.lower(), start, end)
 
-    def find_author(authors, text):
+    def find_author(authors, text, start=0, end=None):
         """Method for finding an "author" field (a list of authors) in a text"""
         authors = standardize(authors, 'author')
         ret = []
         for author in authors:
-            pos = find_singular_author(author, text)
+            pos = find_singular_author(author, text, start, end)
             ret.append(pos)
         return ret
 
-    def find_date(date, text):
+    def find_date(date, text, start=0, end=None):
         """Method for finding a date field in a text"""
+        text = text[start:end]
         date = datetime.datetime.strptime(date, '%m/%d/%y')
         # Pass an impossible relative base so that relative words like "today" won't be detected
         matches = search_dates(
@@ -254,25 +261,25 @@ def find(field, text, datatype):
         if matches:
             for original_text, match in matches:
                 if date.date() == match.date():
-                    return find_generic(original_text.lower(), text.lower())
+                    return find_generic(original_text.lower(), text.lower(), start, end)
 
-    def find_title(title, text):
+    def find_title(title, text, start=0, end=None):
         """Method for finding a title field in a text
         ?? 'http://www.digitalspy.com/gaming/retro-corner/news/a381156/retro-corner-wolfenstein-3d/'
         """
         # return find_generic(title.lower(), text.lower())
-        return find_fuzzy_fast(title.lower(), text.lower())
+        return find_fuzzy_fast(title.lower(), text.lower(), start, end)
 
     try:
         if datatype.lower() in ["author", "date", "title"]:
             return eval("find_{0}(field, text)".format(datatype.lower()))
         else:
-            print(
+            debug(
                 "*** Warning in standardization.find: {0} not a findable field"
                 .format(datatype))
-            return find_generic(field, text)
+            return find_generic(field, text, start, end)
     except Exception as e:
-        print("*** Error in standardization.find: {0}".format(e))
+        debug("*** Error in standardization.find: {0}".format(e))
         return (-1, -1)
 
 
@@ -310,5 +317,5 @@ def clean_to_ascii(foreign_char):
         for k in special_chars:
             if foreign_char in special_chars[k]:
                 return k
-    print("Can't convert: " + str(foreign_char))
+    debug("Can't convert: " + str(foreign_char))
     return ' '
