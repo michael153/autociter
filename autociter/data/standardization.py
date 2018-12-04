@@ -27,6 +27,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from autociter.data.storage import Table, Record
 from autociter.data.queries import contains
 from autociter.utils.debugging import debug
+from autociter.utils.decorators import timeit
 
 
 def standardize(data, datatype):
@@ -168,7 +169,7 @@ def standardize(data, datatype):
         return ""
 
 
-def find(field, text, datatype, start=0, end=None):
+def find(field, text, datatype, start=0, end=None, threshold_value=0.6):
     """Attempts to locate a field as a substring of text based on its datatype.
     Assumes text is cleaned by pipeline's clean_text"""
 
@@ -180,7 +181,7 @@ def find(field, text, datatype, start=0, end=None):
             return (start + index, start + index + len(field))
         return (-1, -1)
 
-    def find_fuzzy_fast(field, text, start=0, end=None, threshold_value=0.6):
+    def find_fuzzy_fast(field, text, start=0, end=None):
         """Fast fuzzy string matching
         References:
         https://bergvca.github.io/2017/10/14/super-fast-string-matching.html
@@ -190,10 +191,9 @@ def find(field, text, datatype, start=0, end=None):
         """
 
         def generate_chunks(string, length):
-            """Helper method for generating chunks"""
             return [
                 string[0 + i:length + i]
-                for i in range(0, len(string), length)
+                for i in range(0, len(string), length) if length + i < len(string)
             ]
 
         def generate_ngrams(string, n=3):
