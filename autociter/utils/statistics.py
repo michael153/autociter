@@ -131,7 +131,7 @@ def accuracy_title_content_extractor(sample):
             standardized_content = slice_text(
                 standardization.standardize(content, "text"))
             loc = standardization.find(expected_title, standardized_content,
-                                       "title")
+                                       "title", threshold_value=0.6)
             if loc == (-1, -1):
                 no_title_found.append(record["url"])
                 debug("Title not found | {1} | {2:.2f}s".format(
@@ -140,8 +140,8 @@ def accuracy_title_content_extractor(sample):
             else:
                 locs.append(loc[0])
                 found_title_score = SequenceMatcher(
-                    None, standardized_content[loc[0]:loc[1]],
-                    expected_title).ratio()
+                    None, standardized_content[loc[0]:loc[1]].lower(),
+                    expected_title.lower()).ratio()
                 debug(
                     "Title located at index {0} | {1} | {2} | {3:.2f}s".format(
                         loc[0], found_title_score, record["url"],
