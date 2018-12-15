@@ -89,7 +89,7 @@ class TitleFirstContentExtractor(ContentExtractor):
         """Predict title and return its index."""
         cached_title = html.unescape(self.open_graph_title or self.title)
         if cached_title:
-            loc = standardization.find(cached_title, self.markdown, "title", threshold_value=0.2)
+            loc = standardization.find(cached_title, self.markdown, "title", threshold_value=0.5)
             if loc == (-1, -1):
                 return self.find_title_in_markdown_naive()
             return loc[0]
