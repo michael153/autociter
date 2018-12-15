@@ -13,7 +13,8 @@
 #   limitations under the License.
 #
 # Author: Michael Wan <m.wan@berkeley.edu>
-import time
+
+import sys, time, string, random
 import numpy as np
 from difflib import SequenceMatcher
 
@@ -21,8 +22,80 @@ from autociter.core.pipeline import slice_text
 from autociter.data.storage import Table
 from autociter.web.webpages import Webpage
 from autociter.utils.debugging import debug
+from autociter.data.queries import contains
 
+import assets
+import autociter.core.pipeline as pipeline
 import autociter.data.standardization as standardization
+
+def accuracy_fuzzy_match(sample):
+    """Return the accuracy of the fuzzy_match algorithm in standardization.find
+    """
+    debug("Collecting seed urls...")
+    contents = []
+    max_edits, strings_per_url = 4, 100
+    edit_types = ["swap", "add", "del"]
+    error_types = {e: [] for e in edit_types}
+    error_types["pure_string"] = []
+    char_dict = string.ascii_uppercase + string.ascii_lowercase + string.digits + "\n_-#"
+    success, total, wrong_string_found, no_string_found = 0, 0, [], []
+    for record in sample:
+        try:
+            contents.append(pipeline.get_content_from_url(record["url"]))
+        except Exception as ex:
+            debug("Error: {0} | {1}".format(ex, record["url"]))
+    for content in contents:
+        if len(content) < 2:
+            continue
+        for num_edits in range(max_edits):
+            for i in range(strings_per_url):
+                s, e = random.sample(range(0, len(content)), 2)
+                s, e = min(s, e), max(s, e)
+                llen = len(content[s:e]) - len(content[s:e].lstrip())
+                rlen = len(content[s:e]) - len(content[s:e].rstrip())
+                s += llen
+                e -= rlen
+                if e <= s:
+                    continue
+                field = content[s:e]
+                edits = []
+                for _ in range(num_edits):
+                    edit_type = np.random.randint(len(edit_types))
+                    edits.append(edit_type)
+                    if len(field) == 0:
+                        break
+                    incident_index = np.random.randint(len(field))
+                    if edit_type == 0:
+                        field = field[:incident_index] + random.choice(char_dict) + field[incident_index+1:]
+                    elif edit_type == 1:
+                        field = field[:incident_index] + random.choice(char_dict) + field[incident_index:]
+                    elif edit_type == 2:
+                        field = field[:incident_index] + field[incident_index+1:]
+                loc = standardization.find(field, content, "title", threshold_value=0.5)
+                if loc == (-1, -1) or abs(loc[0] - s) >= max_edits or abs(loc[1] - e) >= max_edits:
+                    if num_edits == 0:
+                        error_types["pure_string"].append((field, record["url"]))
+                    for e in edits:
+                        error_types[edit_types[e]].append((field, record["url"]))
+                    if loc != (-1, -1):
+                        debug("Original: ({0}, {1}) \t| Found: ({2}, {3}) \t| Wrong String Found \t| {4} edits | {5}".format(s, e, loc[0], loc[1], num_edits, record["url"]))
+                        wrong_string_found.append(num_edits)
+                    else:
+                        debug("Original: ({0}, {1}) \t| Found: ({2}, {3}) \t| String Not Found \t\t| {4} edits | {5}".format(s, e, loc[0], loc[1], num_edits, record["url"]))
+                        no_string_found.append(num_edits)
+                else:
+                    success += 1
+                    debug("Original: ({0}, {1}) \t| Found: ({2}, {3}) \t| String Found \t\t| {4} edits | {5}".format(s, e, loc[0], loc[1], num_edits, record["url"]))
+                total += 1
+    debug("Test complete.\n\nSUMMARY\n-------")
+    debug("Accuracy: {0}/{1} = {2:.2f}%\n".format(success, total, 100.0*success/total))
+    debug("Wrong String Found: {0}".format(len(wrong_string_found)))
+    debug("No String Found: {0}".format(len(no_string_found)))
+    for error in error_types:
+        debug("Error type '{0}': {1}".format(error, len(error_types[error])))
+    debug("\nNo_edit String Errors\n-------")
+    for no_edit_strings in error_types["pure_string"]:
+        debug("\"{0}\" | {1}\n".format(no_edit_strings[0] if len(no_edit_strings[0]) < 100 else no_edit_strings[0][:97] + "...", no_edit_strings[1]))
 
 
 def accuracy_data_preservation(sample,
@@ -178,3 +251,26 @@ def accuracy_title_content_extractor(sample):
     debug(no_title_found)
     debug("\nUrls w/ errors: ")
     debug(urls_with_errors)
+
+
+if __name__ == '__main__':
+    methods = ["accuracy_data_preservation", "accuracy_title_content_extractor", "accuracy_fuzzy_match"]
+    default_num_points = {
+        "accuracy_data_preservation": 150,
+        "accuracy_title_content_extractor": 150,
+        "accuracy_fuzzy_match": 15
+    }
+    if len(sys.argv) > 1:
+        if sys.argv[1] in methods:
+            debug("Gathering points from citations.csv...")
+            table = Table(assets.DATA_PATH + "/citations.csv")
+            num_points = default_num_points[sys.argv[1]]
+            if len(sys.argv) > 2 and sys.argv[2].isnumeric():
+                num_points = int(sys.argv[2])
+            random_records = random.sample(table.records, num_points)
+            new_table = Table(fields=table.fields)
+            new_table.extend(random_records)
+            new_table = new_table.query(contains("title"))
+            new_table = standardization.standardize(new_table, 'table')
+            eval("{0}({1})".format(sys.argv[1], "new_table"))
+
