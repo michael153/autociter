@@ -262,6 +262,7 @@ def find(field, text, datatype, start=0, end=None, threshold_value=0.6):
             for original_text, match in matches:
                 if date.date() == match.date():
                     return find_generic(original_text.lower(), text.lower(), start, end)
+        return (-1, -1)
 
     def find_title(title, text, start=0, end=None):
         """Method for finding a title field in a text
