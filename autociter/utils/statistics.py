@@ -28,15 +28,14 @@ import assets
 import autociter.core.pipeline as pipeline
 import autociter.data.standardization as standardization
 
-def accuracy_fuzzy_match(sample):
+def accuracy_fuzzy_match(sample, min_length=10, max_edits=3, strings_per_url=100):
     """Return the accuracy of the fuzzy_match algorithm in standardization.find
     """
     debug("Collecting seed urls...")
     contents = []
-    max_edits, strings_per_url = 4, 100
     edit_types = ["swap", "add", "del"]
-    error_types = {e: [] for e in edit_types}
-    error_types["pure_string"] = []
+    errors_by_edit_type = {e: {"error": [], "total": 0} for e in edit_types}
+    errors_by_num_edits = {e: {"error": [], "total": 0} for e in range(max_edits+1)}
     char_dict = string.ascii_uppercase + string.ascii_lowercase + string.digits + "\n_-#"
     success, total, wrong_string_found, no_string_found = 0, 0, [], []
     for record in sample:
@@ -47,10 +46,11 @@ def accuracy_fuzzy_match(sample):
     for content in contents:
         if len(content) < 2:
             continue
-        for num_edits in range(max_edits):
+        for num_edits in range(max_edits+1):
             for i in range(strings_per_url):
                 s, e = random.sample(range(0, len(content)), 2)
                 s, e = min(s, e), max(s, e)
+                e = max(e, s + min_length)
                 llen = len(content[s:e]) - len(content[s:e].lstrip())
                 rlen = len(content[s:e]) - len(content[s:e].rstrip())
                 s += llen
@@ -71,30 +71,38 @@ def accuracy_fuzzy_match(sample):
                         field = field[:incident_index] + random.choice(char_dict) + field[incident_index:]
                     elif edit_type == 2:
                         field = field[:incident_index] + field[incident_index+1:]
+                    errors_by_edit_type[edit_types[edit_type]]["total"] += 1
                 loc = standardization.find(field, content, "title", threshold_value=0.5)
                 if loc == (-1, -1) or abs(loc[0] - s) >= max_edits or abs(loc[1] - e) >= max_edits:
-                    if num_edits == 0:
-                        error_types["pure_string"].append((field, record["url"]))
                     for e in edits:
-                        error_types[edit_types[e]].append((field, record["url"]))
+                        errors_by_edit_type[edit_types[e]]["error"].append((field, record["url"]))
                     if loc != (-1, -1):
                         debug("Original: ({0}, {1}) \t| Found: ({2}, {3}) \t| Wrong String Found \t| {4} edits | {5}".format(s, e, loc[0], loc[1], num_edits, record["url"]))
                         wrong_string_found.append(num_edits)
                     else:
                         debug("Original: ({0}, {1}) \t| Found: ({2}, {3}) \t| String Not Found \t\t| {4} edits | {5}".format(s, e, loc[0], loc[1], num_edits, record["url"]))
                         no_string_found.append(num_edits)
+                    errors_by_num_edits[num_edits]["error"].append((field, record["url"]))
                 else:
                     success += 1
                     debug("Original: ({0}, {1}) \t| Found: ({2}, {3}) \t| String Found \t\t| {4} edits | {5}".format(s, e, loc[0], loc[1], num_edits, record["url"]))
+                errors_by_num_edits[num_edits]["total"] += 1
                 total += 1
     debug("Test complete.\n\nSUMMARY\n-------")
     debug("Accuracy: {0}/{1} = {2:.2f}%\n".format(success, total, 100.0*success/total))
     debug("Wrong String Found: {0}".format(len(wrong_string_found)))
     debug("No String Found: {0}".format(len(no_string_found)))
-    for error in error_types:
-        debug("Error type '{0}': {1}".format(error, len(error_types[error])))
+
+    debug("\nError breakdown by edit type:")
+    for error in errors_by_edit_type:
+        e, t = len(errors_by_edit_type[error]["error"]), errors_by_edit_type[error]["total"]
+        debug("Edit type '{0}': {1}/{2} ({3:.2f}% accuracy)".format(error, e, t, 100.0*(1 - e/t)))
+    debug("\nError breakdown by number of edits:")
+    for num in range(max_edits+1):
+        e, t = len(errors_by_num_edits[num]["error"]), errors_by_num_edits[num]["total"]
+        debug("{0} edits: {1}/{2} ({3:.2f}% accuracy)".format(num, e, t, 100.0*(1 - e/t)))
     debug("\nNo_edit String Errors\n-------")
-    for no_edit_strings in error_types["pure_string"]:
+    for no_edit_strings in errors_by_num_edits[0]["error"]:
         debug("\"{0}\" | {1}\n".format(no_edit_strings[0] if len(no_edit_strings[0]) < 100 else no_edit_strings[0][:97] + "...", no_edit_strings[1]))
 
 
@@ -262,8 +270,9 @@ if __name__ == '__main__':
     }
     if len(sys.argv) > 1:
         if sys.argv[1] in methods:
-            debug("Gathering points from citations.csv...")
-            table = Table(assets.DATA_PATH + "/citations.csv")
+            file_name = "clean_100_citations.csv"
+            debug("Gathering points from {0}...".format(file_name))
+            table = Table(assets.DATA_PATH + "/{0}".format(file_name))
             num_points = default_num_points[sys.argv[1]]
             if len(sys.argv) > 2 and sys.argv[2].isnumeric():
                 num_points = int(sys.argv[2])
